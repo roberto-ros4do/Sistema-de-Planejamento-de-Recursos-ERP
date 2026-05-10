@@ -1,0 +1,1 @@
+{"saldo": 19665.0, "produtos": [{"nome": "Coca Cola Lata", "valor": 6.0, "estoque": 30, "especificacao": "Manter refrigerado", "id": 0}, {"nome": "RedBull Lata", "valor": 11.0, "estoque": 20, "especificacao": "Manter refrigerado", "id": 1}], "historico": [{"movimentacao": "COMPRA", "produto": "Coca Cola Lata", "unidades": 10}]}
