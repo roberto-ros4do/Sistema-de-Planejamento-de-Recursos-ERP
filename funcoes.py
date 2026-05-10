@@ -1,32 +1,28 @@
-def cadastro(produtos, saldo):
-    produto = input('Adicione o produto ')
-    produtos.append({'nome': produto, 'valor': 0.0, 'estoque': 0, 'especificacao': '', 'id': 0})
-    numero = len(produtos)-1
-    while True:
-        try:
-            produtos[numero]['id'] = numero
-            valor = float(input('Por quanto o produto será vendido '))
-            produtos[numero]['valor'] = valor
-            esp = input('Possui alguma especificação? ')
-            if esp.lower() == 's' or esp.lower() == 'sim':
-                esp2 = input("Qual a especificação? ")
-                produtos[numero]['especificacao'] = esp2
-            estoq = int(input('Qual a disponibilidade no estoque '))
-            produtos[numero]['estoque'] = estoq
-            invest = float(input('Quanto custou o investimento '))
-            saldo -= invest
-            print('Cadastrado com sucesso! ')
-            print(f"=========={produtos[numero]['nome']}===========")
-            print(f"ID DO PRODUTO: [{produtos[numero]['id']}]")
-            print(f"DISPONIBILIDADE NO ESTOQUE: {produtos[numero]['estoque']}")
-            print(f"PREÇO: R$ {produtos[numero]['valor']}")
-            return saldo
-            break
-        except ValueError:
-            print('INSIRA APENAS NÚMEROS')
+def cadastro(cursor, conexao):
+    n = input('Insira o nome do produto ')
+    q = int(input('Insira a disponibilidade no estoque '))
+    invest = float(input('Qual o valor do investimento'))
+    v = float(input('Por quanto o produto será vendido'))
+    esp2 = ''
+    esp = input('Possui alguma especificação? ')
+    if esp.lower() == 's' or esp.lower() == 'sim':
+        esp2 = input('Qual a especificação')
+
+    cursor.execute("""
+    INSERT INTO produtos (nome, quantidade, preco, especificacao)
+    VALUES (?, ?, ?, ?)
+    """, (n, q, v, esp2))
+
+    cursor.execute("""
+    UPDATE SALDO
+    SET valor = valor - ?
+    WHERE id = 1          
+    """, (invest,))
 
 
-def movimentacao(historico,produtos, saldo):
+    conexao.commit()
+
+def movimentacao(cursor, conexao):
     while True:
         try:
             print('[1] ENTRADA ')
@@ -34,94 +30,161 @@ def movimentacao(historico,produtos, saldo):
             op = int(input('Qual a movimentação realizada '))
             match op:
                 case 1:
+                    tip = 'ENTRADA'
                     print('[1] COMPRA')
                     print('[2] DEVOLUÇÃO')
                     tipo = int(input('Qual o tipo de entrada? '))
                     match tipo:
                         case 1:
-                            tip = 'COMPRA'
-                            historico.append({'movimentacao': tip, 'produto': '', 'unidades': 0})
-                            numero = len(historico)-1
-                            id = int(input('Qual o ID do produto recebido '))
-                            unid = int(input('Quantas unidades foram recebidas'))
-                            historico[numero]['unidades'] = unid
+                            stip = 'COMPRA'
+                            idProduto = int(input('Qual o id do produto '))
+                            cursor.execute("""
+                            SELECT * FROM produtos                   
+                            """)
+                            produtos = cursor.fetchall() 
+                            n = ''
+                            for produto in produtos:
+                                if produto[0] == idProduto:
+                                    n = produto[1]
+                            q = int(input('Quantas unidades foram recebidas'))
                             invest = float(input('Qual o valor do investimento? '))
-                            for produto in produtos:
-                                if produto['id'] == id:
-                                    prod = produto['nome']
-                                    historico[numero]['produto'] = prod
-                                    produto['estoque'] += unid
-                            saldo -= invest
-                            return saldo
+                            cursor.execute("""
+                            INSERT INTO historico (produto, tipo, stipo, quantidade)
+                            VALUES (?, ?, ?, ?)
+                            """, (n, tip, stip, q))
+                            cursor.execute("""
+                            UPDATE SALDO
+                            SET valor = valor - ?
+                            WHERE id = 1  
+                            """, (invest,))
+                            cursor.execute("""
+                            UPDATE produtos
+                            SET quantidade = quantidade + ?
+                            WHERE id = ?  
+                            """, (q, idProduto))
+                            conexao.commit()
+                            break
+                            
                         case 2:
-                            tip = 'DEVOLUÇÃO'
-                            historico.append({'movimentacao': tip, 'produto': '', 'unidades': 0})
-                            numero = len(historico)-1
-                            id = int(input('Qual o ID do produto devolvido '))
-                            unid = int(input('Quantas unidades foram devolvidas'))
-                            historico[numero]['unidades'] = unid
-                            remb = float(input('Qual o valor do reembolso? '))
+                            stip = 'DEVOLUÇÃO'
+                            idProduto = int(input('Qual o id do produto '))
+                            cursor.execute("""
+                            SELECT * FROM produtos                   
+                            """)
+                            produtos = cursor.fetchall() 
+                            n = ''
                             for produto in produtos:
-                                if produto['id'] == id:
-                                    prod = produto['nome']
-                                    historico[numero]['produto'] = prod
-                                    produto['estoque'] += unid
-                            saldo -= remb
-                            return saldo
+                                if produto[0] == idProduto:
+                                    n = produto[1]
+                            q = int(input('Quantas unidades foram devolvidas'))
+                            invest = float(input('Qual o valor do reembolso? '))
+                            cursor.execute("""
+                            INSERT INTO historico (produto, tipo, stipo, quantidade)
+                            VALUES (?, ?, ?, ?)
+                            """, (n, tip, stip, q))
+                            cursor.execute("""
+                            UPDATE SALDO
+                            SET valor = valor - ?
+                            WHERE id = 1  
+                            """, (invest,))
+                            cursor.execute("""
+                            UPDATE produtos
+                            SET quantidade = quantidade + ?
+                            WHERE id = ?   
+                            """, (q, idProduto))
+                            conexao.commit()
+                            break
                         case _:
                             print('INSIRA APENAS NÚMEROS DE 1 A 2 ')
                 case 2:
+                    tip = 'SAÍDA'
                     print('[1] VENDA')
                     print('[2] PERCA')
                     print('[3] TRANSFERÊNCIA')
                     tipo = int(input('Qual o tipo de saida? '))
                     match tipo:
                         case 1:
-                            tip = 'VENDA'
-                            historico.append({'movimentacao': tip, 'produto': '', 'unidades': 0})
-                            numero = len(historico)-1
-                            id = int(input('Qual o ID do produto vendido '))
-                            unid = int(input('Quantas unidades foram vendidas '))
-                            historico[numero]['unidades'] = unid
-                            venda = float(input('Qual o valor da venda? '))
+                            stip = 'VENDA'
+                            idProduto = int(input('Qual o id do produto '))
+                            cursor.execute("""
+                            SELECT * FROM produtos                   
+                            """)
+                            produtos = cursor.fetchall() 
+                            n = ''
                             for produto in produtos:
-                                if produto['id'] == id:
-                                    prod = produto['nome']
-                                    historico[numero]['produto'] = prod
-                                    produto['estoque'] -= unid
-                            saldo += venda
-                            return saldo
-                        
-                        case 2:
-                            tip = 'PERCA'
-                            historico.append({'movimentacao': tip, 'produto': '', 'unidades': 0})
-                            numero = len(historico)-1
-                            id = int(input('Qual o ID do produto perdido '))
-                            unid = int(input('Quantas unidades foram perdidas'))
-                            historico[numero]['unidades'] = unid
-                            for produto in produtos:
-                                if produto['id'] == id:
-                                    prod = produto['nome']
-                                    historico[numero]['produto'] = prod
-                                    produto['estoque'] -= unid
+                                if produto[0] == idProduto:
+                                    n = produto[1]
+                            q = int(input('Quantas unidades foram vendidas'))
+                            invest = float(input('Qual o valor da venda? '))
+                            cursor.execute("""
+                            INSERT INTO historico (produto, tipo, stipo, quantidade)
+                            VALUES (?, ?, ?, ?)
+                            """, (n, tip, stip, q))
+                            cursor.execute("""
+                            UPDATE SALDO
+                            SET valor = valor + ?
+                            WHERE id = 1  
+                            """, (invest,))
+                            cursor.execute("""
+                            UPDATE produtos
+                            SET quantidade = quantidade - ?
+                            WHERE id = ?           
+                            """, (q, idProduto))
+                            conexao.commit()
                             break
-                        case 3:
-                            tip = 'TRANSFERÊNCIA'
-                            historico.append({'movimentacao': tip, 'produto': '', 'unidades': 0})
-                            numero = len(historico)-1
-                            id = int(input('Qual o ID do produto transferido '))
-                            unid = int(input('Quantas unidades foram transferidas'))
-                            historico[numero]['unidades'] = unid
-                            custo = input('Houve custo de trsnaferencia? ')
-                            if custo.lower() == 's' or custo.lower() == 'sim':
-                                custo2 = float(input('Quanto custou o transporte? '))
-                                saldo -= custo2 
+                        case 2:
+                            stip = 'PERCA'
+                            idProduto = int(input('Qual o id do produto '))
+                            cursor.execute("""
+                            SELECT * FROM produtos                   
+                            """)
+                            produtos = cursor.fetchall()
+                            n = ''
                             for produto in produtos:
-                                if produto['id'] == id:
-                                    prod = produto['nome']
-                                    historico[numero]['produto'] = prod
-                                    produto['estoque'] -= unid
-                            return saldo
+                                if produto[0] == idProduto:
+                                    n = produto[1]
+                            q = int(input('Quantas unidades foram perdidas'))
+                            cursor.execute("""
+                            INSERT INTO historico (produto, tipo, stipo, quantidade)
+                            VALUES (?, ?, ?, ?)
+                            """, (n, tip, stip, q))
+                            cursor.execute("""
+                            UPDATE produtos
+                            SET quantidade = quantidade - ?
+                            WHERE id = ?   
+                            """, (q, idProduto))
+                            conexao.commit()
+                            break
+                           
+                        case 3:
+                            stip = 'TRANSFERÊNCIA'
+                            idProduto = int(input('Qual o id do produto '))
+                            cursor.execute("""
+                            SELECT * FROM produtos                   
+                            """)
+                            produtos = cursor.fetchall()
+                            n = ''
+                            for produto in produtos:
+                                if produto[0] == idProduto:
+                                    n = produto[1]
+                            q = int(input('Quantas unidades foram transferidas'))
+                            invest = float(input('Quanto custou o transporte? '))
+                            cursor.execute("""
+                            INSERT INTO historico (produto, tipo, stipo, quantidade)
+                            VALUES (?, ?, ?, ?)
+                            """, (n, tip, stip, q))
+                            cursor.execute("""
+                            UPDATE SALDO
+                            SET valor = valor - ?
+                            WHERE id = 1  
+                            """, (invest,))
+                            cursor.execute("""
+                            UPDATE produtos
+                            SET quantidade = quantidade - ?
+                            WHERE id = ?   
+                            """, (q, idProduto))
+                            conexao.commit()
+                            break
                         case _:
                             print('INSIRA SOMENTE NÚMEROS DE 1 A 3 ')
                 case _:
@@ -129,25 +192,35 @@ def movimentacao(historico,produtos, saldo):
         except ValueError:
             print('INSIRA APENAS NÚMEROS')
 
-def listarProdutos(produtos):
+def listarProdutos(cursor, conexao):
+    cursor.execute("""
+    SELECT * FROM produtos                   
+    """)
+    
+
+    produtos = cursor.fetchall()
     for produto in produtos:
-        print(f"=========={produto['nome']}===========")
-        print(f"ID DO PRODUTO: [{produto['id']}]")
-        print(f"DISPONIBILIDADE NO ESTOQUE: {produto['estoque']}")
-        print(f"PREÇO: R$ {produto['valor']}")
-        if produto['especificacao'] != '':
-            print(f"ESPECIFICAÇÃO: {produto['especificacao']}")
+        print(f"=========={produto[1]}===========")
+        print(f"ID DO PRODUTO: [{produto[0]}]")
+        print(f"DISPONIBILIDADE NO ESTOQUE: {produto[2]}")
+        print(f"PREÇO: R$ {produto[3]}")
+        if produto[4] != '':
+            print(f"ESPECIFICAÇÃO: {produto[4]}")
 
-def listarHistorico(historico):
+def listarHistorico(cursor, conexao):
+    cursor.execute("""
+    SELECT * FROM  historico                  
+    """)
+    historico = cursor.fetchall()
     for mov in historico:
-        print(f"=========={mov['produto']}===========")
-        print(f"TIPO DE MOVIMENTAÇÃO {mov['movimentacao']}")
-        if mov['movimentacao'] == 'COMPRA' or mov['movimentacao'] == 'DEVOLUÇÃO':
-            print(f"UNIDADES RECEBIDAS: {mov['unidades']}")
+        print(f"=========={mov[1]}===========")
+        print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
+        if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
+            print(f"UNIDADES RECEBIDAS: {mov[4]}")
         else:
-            print(f"UNIDADES DESFAZIDAS: {mov['unidades']}")
+            print(f"UNIDADES DESFAZIDAS: {mov[4]}")
 
-def editarSaldo(saldo):
+def editarSaldo(cursor, conexao):
     print('[1] APLICAÇÃO ')
     print('[2] RETIRADA')
     while True:
@@ -156,15 +229,25 @@ def editarSaldo(saldo):
             match op:
                 case 1:
                     ap = float(input('Quanto deseja adicionar '))
-                    saldo += ap
-                    return saldo
+                    cursor.execute("""
+                    UPDATE SALDO
+                     SET valor = valor + ?
+                    WHERE id = 1           
+                     """, (ap,))
+                    conexao.commit()
                     break
                 case 2:
                     ret = float(input('Quanto deseja retirar '))
-                    saldo -= ret
-                    return saldo
+                    cursor.execute("""
+                    UPDATE SALDO
+                     SET valor = valor - ?
+                    WHERE id = 1   
+                    """, (ret,))
+                    conexao.commit()
                     break
                 case _:
                     print('INSIRA APENAS NÚMEROS DE 1 A 2 ')
         except ValueError:
             print('INSIRA APENAS NÚMEROS')
+
+

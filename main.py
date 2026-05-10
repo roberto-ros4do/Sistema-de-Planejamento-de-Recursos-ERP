@@ -1,26 +1,18 @@
-import json
-from funcoes import cadastro, movimentacao, listarProdutos, listarHistorico, editarSaldo
+import sqlite3
+from funcoes import cadastro, movimentacao, listarHistorico, listarProdutos, editarSaldo
+from banco import Bancos
 
-try:
-    with open("dados.json", "r") as arquivo:
-        dados = json.load(arquivo)
-        saldo = dados["saldo"]
-        produtos = dados["produtos"]
-        historico = dados["historico"]
-except (FileNotFoundError, json.JSONDecodeError):
-    saldo = 0.0
-    produtos = []
-    historico = []
+Bancos()
 
+conexao = sqlite3.connect("banco.db")
+cursor = conexao.cursor()
 
-def salvar(saldo, produtos, historico):
-    with open("dados.json", "w") as arquivo:
-        json.dump({
-            "saldo": saldo,
-            "produtos": produtos,
-            "historico": historico
-            },arquivo)
 while True:
+    cursor.execute("""
+    SELECT valor FROM saldo WHERE id = 1
+    """)
+    saldo = cursor.fetchone()[0]
+
     print('------PLANEJAMENTO DE RECURSOS EMPRESARIAIS-------')
     print('------------------------------')
     print(f'SALDO: R$ {saldo:.2f}')
@@ -36,22 +28,24 @@ while True:
         funcao = int(input('QUAL FUNÇÃO DESEJA REALIZAR? '))
         match funcao:
             case 1:
-                saldo = cadastro(produtos,saldo)
-                salvar(saldo, produtos, historico)
+                cadastro(cursor, conexao)
+            
             case 2:
-                saldo = movimentacao(historico, produtos, saldo)
-                salvar(saldo, produtos, historico)
+                movimentacao(cursor, conexao)
+    
             case 3:
                 print('AINDA NÃO IMPLEMENTADA!')
             case 4:
-                listarProdutos(produtos)
+               listarProdutos(cursor, conexao)
             case 5:
-                listarHistorico(historico)
+               listarHistorico(cursor, conexao)
+                
             case 6:
-                saldo = editarSaldo(saldo)
-                salvar(saldo, produtos, historico)
+               editarSaldo(cursor, conexao)
+            
             case 7:
                 print('SAINDO...')
+                conexao.close()
                 break
             case _:
                 print('INSIRA SOMENTE NÚMEROS ENTRE 1 E 7 ')
@@ -59,4 +53,6 @@ while True:
         print('INVÁLIDO, INSIRA UM VALOR DE 1 A 7')
     continuar = input('AINDA DESEJA UTILIZAR O SISTEMA? ')
     if continuar.lower() != 's' and continuar.lower() != 'sim':
+        conexao.close()
         break
+
