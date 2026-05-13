@@ -2,6 +2,14 @@ def cadastro(cursor, conexao):
     n = input('Insira o nome do produto ')
     q = int(input('Insira a disponibilidade no estoque '))
     invest = float(input('Qual o valor do investimento'))
+    cursor.execute("""
+    SELECT valor FROM saldo
+    where id = 1
+    """)
+    saldo = cursor.fetchone()[0]
+    if invest>saldo:
+        print('Você não pode cadastrar este produto pois o saldo não é suficiente ')
+        return
     v = float(input('Por quanto o produto será vendido'))
     esp2 = ''
     esp = input('Possui alguma especificação? ')
@@ -23,6 +31,11 @@ def cadastro(cursor, conexao):
     conexao.commit()
 
 def movimentacao(cursor, conexao):
+    cursor.execute("""
+    SELECT valor FROM saldo
+    where id = 1
+    """)
+    saldo = cursor.fetchone()[0]
     while True:
         try:
             print('[1] ENTRADA ')
@@ -39,19 +52,23 @@ def movimentacao(cursor, conexao):
                             stip = 'COMPRA'
                             idProduto = int(input('Qual o id do produto '))
                             cursor.execute("""
-                            SELECT * FROM produtos                   
-                            """)
-                            produtos = cursor.fetchall() 
-                            n = ''
-                            for produto in produtos:
-                                if produto[0] == idProduto:
-                                    n = produto[1]
+                            SELECT nome FROM produtos
+                            WHERE id = ?                  
+                            """, (idProduto,))
+                            resultado = cursor.fetchone()
+                            if resultado is None:
+                                print('Produto não encontrado ')
+                                return
+                            produto = resultado[0]
                             q = int(input('Quantas unidades foram recebidas'))
                             invest = float(input('Qual o valor do investimento? '))
+                            if invest>saldo:
+                                print('Você não pode realizar esta movimentação pois o saldo não é suficiente ')
+                                return
                             cursor.execute("""
                             INSERT INTO historico (produto, tipo, stipo, quantidade)
                             VALUES (?, ?, ?, ?)
-                            """, (n, tip, stip, q))
+                            """, (produto, tip, stip, q))
                             cursor.execute("""
                             UPDATE SALDO
                             SET valor = valor - ?
@@ -63,25 +80,26 @@ def movimentacao(cursor, conexao):
                             WHERE id = ?  
                             """, (q, idProduto))
                             conexao.commit()
-                            break
+                            return
                             
                         case 2:
                             stip = 'DEVOLUÇÃO'
                             idProduto = int(input('Qual o id do produto '))
                             cursor.execute("""
-                            SELECT * FROM produtos                   
-                            """)
-                            produtos = cursor.fetchall() 
-                            n = ''
-                            for produto in produtos:
-                                if produto[0] == idProduto:
-                                    n = produto[1]
+                            SELECT nome FROM produtos
+                            WHERE id = ?                  
+                            """, (idProduto,))
+                            resultado = cursor.fetchone()
+                            if resultado is None:
+                                print('Produto não encontrado ')
+                                return
+                            produto = resultado[0]
                             q = int(input('Quantas unidades foram devolvidas'))
                             invest = float(input('Qual o valor do reembolso? '))
                             cursor.execute("""
                             INSERT INTO historico (produto, tipo, stipo, quantidade)
                             VALUES (?, ?, ?, ?)
-                            """, (n, tip, stip, q))
+                            """, (produto, tip, stip, q))
                             cursor.execute("""
                             UPDATE SALDO
                             SET valor = valor - ?
@@ -93,7 +111,7 @@ def movimentacao(cursor, conexao):
                             WHERE id = ?   
                             """, (q, idProduto))
                             conexao.commit()
-                            break
+                            return
                         case _:
                             print('INSIRA APENAS NÚMEROS DE 1 A 2 ')
                 case 2:
@@ -107,19 +125,24 @@ def movimentacao(cursor, conexao):
                             stip = 'VENDA'
                             idProduto = int(input('Qual o id do produto '))
                             cursor.execute("""
-                            SELECT * FROM produtos                   
-                            """)
-                            produtos = cursor.fetchall() 
-                            n = ''
-                            for produto in produtos:
-                                if produto[0] == idProduto:
-                                    n = produto[1]
+                            SELECT nome, quantidade FROM produtos
+                            WHERE id = ?                   
+                            """, (idProduto,))
+                            resultado = cursor.fetchone()
+                            if resultado is None:
+                                print('Produto não encontrado ')
+                                return
+                            produto = resultado[0]
+                            unidades = resultado[1]
                             q = int(input('Quantas unidades foram vendidas'))
+                            if q>unidades:
+                                print('Você não pode realizar está venda pois o estoque é insuficiente ')
+                                return
                             invest = float(input('Qual o valor da venda? '))
                             cursor.execute("""
                             INSERT INTO historico (produto, tipo, stipo, quantidade)
                             VALUES (?, ?, ?, ?)
-                            """, (n, tip, stip, q))
+                            """, (produto, tip, stip, q))
                             cursor.execute("""
                             UPDATE SALDO
                             SET valor = valor + ?
@@ -131,48 +154,57 @@ def movimentacao(cursor, conexao):
                             WHERE id = ?           
                             """, (q, idProduto))
                             conexao.commit()
-                            break
+                            return
                         case 2:
                             stip = 'PERCA'
                             idProduto = int(input('Qual o id do produto '))
                             cursor.execute("""
-                            SELECT * FROM produtos                   
-                            """)
-                            produtos = cursor.fetchall()
-                            n = ''
-                            for produto in produtos:
-                                if produto[0] == idProduto:
-                                    n = produto[1]
+                            SELECT nome FROM produtos
+                            WHERE id = ?                  
+                            """, (idProduto,))
+                            resultado = cursor.fetchone()
+                            if resultado is None:
+                                print('Produto não encontrado ')
+                                return
+                            produto = resultado[0]
                             q = int(input('Quantas unidades foram perdidas'))
                             cursor.execute("""
                             INSERT INTO historico (produto, tipo, stipo, quantidade)
                             VALUES (?, ?, ?, ?)
-                            """, (n, tip, stip, q))
+                            """, (produto, tip, stip, q))
                             cursor.execute("""
                             UPDATE produtos
                             SET quantidade = quantidade - ?
                             WHERE id = ?   
                             """, (q, idProduto))
                             conexao.commit()
-                            break
+                            return
                            
                         case 3:
                             stip = 'TRANSFERÊNCIA'
                             idProduto = int(input('Qual o id do produto '))
                             cursor.execute("""
-                            SELECT * FROM produtos                   
-                            """)
-                            produtos = cursor.fetchall()
-                            n = ''
-                            for produto in produtos:
-                                if produto[0] == idProduto:
-                                    n = produto[1]
+                            SELECT nome, quantidade FROM produtos
+                            WHERE id = ?                   
+                            """, (idProduto,))
+                            resultado = cursor.fetchone()
+                            if resultado is None:
+                                print('Produto não encontrado ')
+                                return
+                            produto = resultado[0]
+                            unidades = resultado[1]
                             q = int(input('Quantas unidades foram transferidas'))
+                            if q>unidades:
+                                print('Você não pode realizar está transgferência pois o estoque é insuficiente ')
+                                return
                             invest = float(input('Quanto custou o transporte? '))
+                            if invest>saldo:
+                                print('Você não pode realizar esta transferência pois o saldo não é suficiente ')
+                                return
                             cursor.execute("""
                             INSERT INTO historico (produto, tipo, stipo, quantidade)
                             VALUES (?, ?, ?, ?)
-                            """, (n, tip, stip, q))
+                            """, (produto, tip, stip, q))
                             cursor.execute("""
                             UPDATE SALDO
                             SET valor = valor - ?
@@ -184,7 +216,7 @@ def movimentacao(cursor, conexao):
                             WHERE id = ?   
                             """, (q, idProduto))
                             conexao.commit()
-                            break
+                            return
                         case _:
                             print('INSIRA SOMENTE NÚMEROS DE 1 A 3 ')
                 case _:
