@@ -9,7 +9,8 @@ cursor = conexao.cursor()
 
 while True:
     cursor.execute("""
-    SELECT valor FROM saldo WHERE id = 1
+    SELECT valor FROM saldo 
+    WHERE id = 1
     """)
     saldo = cursor.fetchone()[0]
 
@@ -29,29 +30,25 @@ while True:
         match funcao:
             case 1:
                 cadastro(cursor, conexao)
-            
             case 2:
                 movimentacao(cursor, conexao)
-    
             case 3:
                 print('AINDA NÃO IMPLEMENTADA!')
             case 4:
                listarProdutos(cursor, conexao)
             case 5:
                listarHistorico(cursor, conexao)
-                
             case 6:
                editarSaldo(cursor, conexao)
-            
             case 7:
                 print('SAINDO...')
                 conexao.close()
                 break
             case _:
-                print('INSIRA SOMENTE NÚMEROS ENTRE 1 E 7 ')
+                print('ERRO: INSIRA UM VALOR ENTRE 1 E 7 ')
     except ValueError:
-        print('INVÁLIDO, INSIRA UM VALOR DE 1 A 7')
-    continuar = input('AINDA DESEJA UTILIZAR O SISTEMA? ')
+        print('ERRO: INSIRA UM VALOR ENTRE 1 A 7')
+    continuar = input('AINDA DESEJA UTILIZAR O SISTEMA[S/N]? ')
     if continuar.lower() != 's' and continuar.lower() != 'sim':
         conexao.close()
         break
