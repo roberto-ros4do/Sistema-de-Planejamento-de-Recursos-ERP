@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # ERP CRUD Console em Python
 
 Sistema simples de Planejamento de Recursos Empresariais (ERP) CRUD desenvolvido em Python no terminal, com foco em:
