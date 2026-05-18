@@ -1,5 +1,5 @@
 import sqlite3
-from funcoes import cadastro, movimentacao, listarHistorico, listarProdutos, editarSaldo
+from funcoes import cadastro, movimentacao, listarHistorico, listarProdutos, editarSaldo, deletar
 from banco import Bancos
 
 Bancos()
@@ -18,13 +18,14 @@ while True:
     print('------------------------------')
     print(f'SALDO: R$ {saldo:.2f}')
     print('------------------------------')
-    print('[1] CADASTRO DE PRODUTOS')
+    print('[1] CADASTRAR PRODUTOS')
     print('[2] REGISTRAR MOVIMENTAÇÃO')
     print('[3] RELATÓRIO GERENCIAL')
     print('[4] LISTAGEM DE PRODUTOS')
     print('[5] HISTÓRICO DE MOVIMENTAÇÕES')
-    print('[6] EDITAR SALDO')
-    print('[7] SAIR DO SISTEMA')
+    print('[6] DELETAR PRODUTO')
+    print('[7] EDITAR SALDO')
+    print('[8] SAIR DO SISTEMA')
     try:
         funcao = int(input('QUAL FUNÇÃO DESEJA REALIZAR? '))
         match funcao:
@@ -39,8 +40,10 @@ while True:
             case 5:
                listarHistorico(cursor, conexao)
             case 6:
-               editarSaldo(cursor, conexao)
+                deletar(cursor, conexao)
             case 7:
+               editarSaldo(cursor, conexao)
+            case 8:
                 print('SAINDO...')
                 conexao.close()
                 break

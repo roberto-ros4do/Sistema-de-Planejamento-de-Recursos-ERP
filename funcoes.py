@@ -292,3 +292,22 @@ def editarSaldo(cursor, conexao):
         except ValueError:
             print('INSIRA APENAS NÚMEROS')
 
+def deletar(cursor, conexao):
+    try:
+        idProd = int(input('Insira o ID do produto que deseja deletar: '))
+        cursor.execute("""
+        SELECT nome FROM produtos
+        WHERE id = ?                  
+        """, (idProd,))
+        resultado = cursor.fetchone()
+        if resultado is None:
+            print('ERRO: PRODUTO NÃO ENCONTRADO!')
+            return
+        produto = resultado[0]
+        cursor.execute("""
+        DELETE FROM produtos
+        WHERE id = ?
+        """, (idProd,))
+        print(f'[{produto}] DELETADO')
+    except ValueError:
+        print('INSIRA APENAS NÚMEROS')

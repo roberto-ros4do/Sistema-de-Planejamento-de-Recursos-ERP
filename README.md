@@ -2,11 +2,6 @@
 # ERP CRUD Console em Python
 
 Sistema simples de Planejamento de Recursos Empresariais (ERP) CRUD desenvolvido em Python no terminal, com foco em:
-=======
-# ERP Console em Python
-
-Sistema simples de Planejamento de Recursos Empresariais (ERP) desenvolvido em Python no terminal, com foco em:
->>>>>>> 40566f7f0dc65e279679e1d0afe22ec733036f5f
 
 * controle de estoque
 * movimentações de produtos
@@ -158,8 +153,3 @@ python main.py
 * interface gráfica
 <<<<<<< HEAD
 * Integração web com Flask
-=======
-* integração web
-
----
->>>>>>> 40566f7f0dc65e279679e1d0afe22ec733036f5f
