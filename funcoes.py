@@ -263,6 +263,12 @@ def listarHistorico(cursor, conexao):
             print(f"UNIDADES DESFAZIDAS: {mov[4]}")
 
 def editarSaldo(cursor, conexao):
+    cursor.execute("""
+    SELECT valor
+    FROM SALDO
+    WHERE id = 1
+    """)
+    saldo = cursor.fetchone()[0]
     print('[1] APLICAÇÃO ')
     print('[2] RETIRADA')
     while True:
@@ -280,6 +286,10 @@ def editarSaldo(cursor, conexao):
                     break
                 case 2:
                     ret = float(input('Quanto deseja retirar '))
+                    if saldo<ret:
+                        print('VOCÊ NÃO PODE REALIZAR ESTÁ RETIRADA!')
+                        print('MOTIVO: SALDO INSUFICIENTE')
+                        return
                     cursor.execute("""
                     UPDATE SALDO
                      SET valor = valor - ?
