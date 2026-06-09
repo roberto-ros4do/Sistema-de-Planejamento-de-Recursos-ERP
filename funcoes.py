@@ -233,24 +233,91 @@ def movimentacao(cursor, conexao):
             print('INSIRA APENAS NÚMEROS')
 
 def listarProdutos(cursor, conexao):
-    cursor.execute("""
-    SELECT * FROM produtos                   
-    """)
-    produtos = cursor.fetchall()
-    if not produtos:
-        print('AINDA NÃO HÁ PRODUTOS CADASTRADOS!')
-    for produto in produtos:
-        print(f"=========={produto[1]}===========")
-        print(f"ID DO PRODUTO: [{produto[0]}]")
-        print(f"DISPONIBILIDADE NO ESTOQUE: {produto[2]}")
-        print(f"PREÇO: R$ {produto[3]}")
-        if produto[4] != '':
-            print(f"ESPECIFICAÇÃO: {produto[4]}")
+    filtro = input('Deseja utilizar filtro? ')
+    if filtro.lower() in ('s', 'sim'):
+        try:
+            query = "SELECT * FROM produtos WHERE 1=1"
+            parametros = []
+            n = input('Insira o nome(ENTER para pular): ')
+            valorMin = input('Insira o valor mínimo(ENTER para pular): ')
+            if valorMin!='':
+                valorMin = float(valorMin)
+                if valorMin<=0:
+                    print('INSIRA VALORES ACIMA DE 0 REAIS!')
+                    return
+            valorMax = input('Insira o valor máximo(ENTER para pular): ')
+            if valorMax!='':
+                valorMax = float(valorMax)
+                if valorMax<=0:
+                    print('INSIRA VALORES ACIMA DE 0 REAIS!')
+                    return
+            estoqMin = input('Insira a disponibilidade mínima(ENTER para pular): ')
+            if estoqMin!='':
+                estoqMin = int(estoqMin)
+                if estoqMin<0:
+                    print('INSIRA APENAS NÚMEROS POSITIVOS')
+                    return
+            estoqMax = input('Insira a disponibilidade máxima(ENTER para pular): ')
+            if estoqMax!='':
+                estoqMax=int(estoqMax)
+                if estoqMax<0:
+                    print('INSIRA APENAS NÚMEROS POSITIVOS')
+                    return
+            if n!='':
+                query += " AND LOWER(nome) LIKE LOWER(?)"
+                parametros.append(f'%{n}%')
+            if valorMin!='' and valorMax!='':
+                if valorMin > valorMax:
+                    valorMin, valorMax = valorMax, valorMin
+            if estoqMin!='' and estoqMax!='':
+                if estoqMin>estoqMax:
+                    estoqMin, estoqMax = estoqMax, estoqMin
+            if valorMin!='':
+                query += " AND preco >= ?"
+                parametros.append(valorMin)
+            if valorMax!='':
+                query += " AND preco <= ?"
+                parametros.append(valorMax)
+            if estoqMin!='':
+                query += " AND quantidade >= ?"
+                parametros.append(estoqMin)
+            if estoqMax!='':
+                query += " AND quantidade <= ? "
+                parametros.append(estoqMax)
+            cursor.execute(query, parametros)
+            produtos = cursor.fetchall()
+            if not produtos:
+                print('NÃO HÁ PRODUTOS COM ESTAS ESPECIFICAÇÕES')
+            else:
+                for produto in produtos:
+                    print(f"=========={produto[1]}===========")
+                    print(f"ID DO PRODUTO: [{produto[0]}]")
+                    print(f"DISPONIBILIDADE NO ESTOQUE: {produto[2]}")
+                    print(f"PREÇO: R$ {produto[3]}")
+                    if produto[4] != '':
+                        print(f"ESPECIFICAÇÃO: {produto[4]}")
+        except ValueError:
+            print('ERRO! INSIRA APENAS NÚMEROS NOS FILTROS DE PREÇO E ESTOQUE')
+    else:
+        cursor.execute("""
+        SELECT * FROM produtos                   
+        """)
+        produtos = cursor.fetchall()
+        if not produtos:
+            print('AINDA NÃO HÁ PRODUTOS CADASTRADOS!')
+        else:
+            for produto in produtos:
+                print(f"=========={produto[1]}===========")
+                print(f"ID DO PRODUTO: [{produto[0]}]")
+                print(f"DISPONIBILIDADE NO ESTOQUE: {produto[2]}")
+                print(f"PREÇO: R$ {produto[3]}")
+                if produto[4] != '':
+                    print(f"ESPECIFICAÇÃO: {produto[4]}")
 
 def listarHistorico(cursor, conexao):
     cursor.execute("""
     SELECT * FROM  historico                  
-    """)
+    """) 
     historico = cursor.fetchall()
     if not historico:
         print('AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES! ')
