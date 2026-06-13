@@ -10,8 +10,8 @@ def Bancos():
                 quantidade INTEGER NOT NULL,
                 preco REAL NOT NULL,
                 especificacao TEXT NOT NULL,
-                dataCad TEXT NOT NULL,
-                horaCad TEXT NOT NULL
+                data TEXT NOT NULL,
+                hora TEXT NOT NULL
                     )
     """)
 
