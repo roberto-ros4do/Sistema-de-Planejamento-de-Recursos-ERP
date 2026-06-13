@@ -1,38 +1,41 @@
 def cadastro(cursor, conexao):
-    try:
-        n = input('Insira o nome do produto: ')
-        q = int(input('Insira a disponibilidade no estoque: '))
-        invest = float(input('Insira o valor do investimento? '))
+        import datetime as dt
+        while True:
+            try:
+                n = input('Insira o nome do produto: ')
+                q = int(input('Insira a disponibilidade no estoque: '))
+                invest = float(input('Insira o valor do investimento? '))
 
-        cursor.execute("""
-        SELECT valor FROM saldo
-        where id = 1
-        """)
-        saldo = cursor.fetchone()[0]
-        if invest>saldo:
-            print('Você não pode cadastrar este produto pois o saldo não é suficiente ')
-            return
-        v = float(input('Insira o valor que será cobrado pelo produto: '))
-        esp2 = ''
-        esp = input('Possui alguma especificação[S/N]? ')
-        if esp.lower() == 's' or esp.lower() == 'sim':
-            esp2 = input('Insira a especificação: ')
-
-        cursor.execute("""
-        INSERT INTO produtos (nome, quantidade, preco, especificacao)
-        VALUES (?, ?, ?, ?)
-        """, (n, q, v, esp2))
-
-        cursor.execute("""
-        UPDATE SALDO
-        SET valor = valor - ?
-        WHERE id = 1          
-        """, (invest,))
-        conexao.commit()
-    except ValueError:
-        print('ERRO! INSIRA APENAS NÚMEROS')
+                cursor.execute("""
+                SELECT valor FROM saldo
+                where id = 1
+                """)
+                saldo = cursor.fetchone()[0]
+                if invest>saldo:
+                    print('ERRO! SALDO INSUFICIENTE ')
+                    return
+                v = float(input('Insira o valor que será cobrado pelo produto: '))
+                esp2 = ''
+                esp = input('Possui alguma especificação[S/N]? ')
+                if esp.lower() == 's' or esp.lower() == 'sim':
+                    esp2 = input('Insira a especificação: ')
+                data = dt.date.today().strftime("%m/%d/%Y")
+                hora = dt.datetime.now().time().strftime("%H:%M")
+                cursor.execute("""
+                INSERT INTO produtos (nome, quantidade, preco, especificacao, dataCad, horaCad)
+                VALUES (?, ?, ?, ?)
+                """, (n, q, v, esp2, data, hora))
+                cursor.execute("""
+                UPDATE SALDO
+                SET valor = valor - ?
+                WHERE id = 1          
+                """, (invest,))
+                conexao.commit()
+            except ValueError:
+                print('ERRO! INSIRA APENAS NÚMEROS')
 
 def movimentacao(cursor, conexao):
+    import datetime as dt
     cursor.execute("""
     SELECT valor FROM saldo
     where id = 1
@@ -62,6 +65,8 @@ def movimentacao(cursor, conexao):
                                 print('ERRO: PRODUTO NÃO ENCONTRADO!')
                                 return
                             produto = resultado[0]
+                            data = dt.date.today().strftime("%m/%d/%Y")
+                            hora = dt.datetime.now().time().strftime("%H:%M")
                             print(f'Produto selecionado >>{produto}<<')
                             q = int(input('Quantas unidades foram recebidas? '))
                             invest = float(input('Insira o valor do investimento: '))
@@ -70,9 +75,9 @@ def movimentacao(cursor, conexao):
                                 print('MOTIVO: SALDO INSUFICIENTE')
                                 return
                             cursor.execute("""
-                            INSERT INTO historico (produto, tipo, stipo, quantidade)
-                            VALUES (?, ?, ?, ?)
-                            """, (produto, tip, stip, q))
+                            INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            """, (produto, tip, stip, q, data, hora))
                             cursor.execute("""
                             UPDATE SALDO
                             SET valor = valor - ?
@@ -100,10 +105,12 @@ def movimentacao(cursor, conexao):
                             print(f'Produto selecionado >>{produto}<<')
                             q = int(input('Quantas unidades foram devolvidas? '))
                             invest = float(input('Qual o valor do reembolso? '))
+                            data = dt.date.today().strftime("%m/%d/%Y")
+                            hora = dt.datetime.now().time().strftime("%H:%M")
                             cursor.execute("""
-                            INSERT INTO historico (produto, tipo, stipo, quantidade)
-                            VALUES (?, ?, ?, ?)
-                            """, (produto, tip, stip, q))
+                            INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            """, (produto, tip, stip, q, data, hora))
                             cursor.execute("""
                             UPDATE SALDO
                             SET valor = valor - ?
@@ -145,10 +152,12 @@ def movimentacao(cursor, conexao):
                                 print('MOTIVO: ESTOQUE INSUFICIENTE')
                                 return
                             invest = float(input('insira o valor da venda: '))
+                            data = dt.date.today().strftime("%m/%d/%Y")
+                            hora = dt.datetime.now().time().strftime("%H:%M")
                             cursor.execute("""
-                            INSERT INTO historico (produto, tipo, stipo, quantidade)
-                            VALUES (?, ?, ?, ?)
-                            """, (produto, tip, stip, q))
+                            INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            """, (produto, tip, stip, q, data, hora))
                             cursor.execute("""
                             UPDATE SALDO
                             SET valor = valor + ?
@@ -175,10 +184,12 @@ def movimentacao(cursor, conexao):
                             produto = resultado[0]
                             print(f'Produto selecionado >>{produto}<<')
                             q = int(input('Quantas unidades foram perdidas? '))
+                            data = dt.date.today().strftime("%m/%d/%Y")
+                            hora = dt.datetime.now().time().strftime("%H:%M")
                             cursor.execute("""
-                            INSERT INTO historico (produto, tipo, stipo, quantidade)
-                            VALUES (?, ?, ?, ?)
-                            """, (produto, tip, stip, q))
+                            INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            """, (produto, tip, stip, q, data, hora))
                             cursor.execute("""
                             UPDATE produtos
                             SET quantidade = quantidade - ?
@@ -211,10 +222,12 @@ def movimentacao(cursor, conexao):
                                 print('VOCÊ NÃO PODE REALIZAR ESTÁ TRANSFERÊNCIA! ')
                                 print('MOTIVO: SALDO INSUFICIENTE')
                                 return
+                            data = dt.date.today().strftime("%m/%d/%Y")
+                            hora = dt.datetime.now().time().strftime("%H:%M")
                             cursor.execute("""
-                            INSERT INTO historico (produto, tipo, stipo, quantidade)
-                            VALUES (?, ?, ?, ?)
-                            """, (produto, tip, stip, q))
+                            INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            """, (produto, tip, stip, q, data, hora))
                             cursor.execute("""
                             UPDATE SALDO
                             SET valor = valor - ?
@@ -323,6 +336,7 @@ def listarHistorico(cursor, conexao):
         print('AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES! ')
     for mov in historico:
         print(f"=========={mov[1]}===========")
+        print(f'REALIZADA EM {5} AS {6}')
         print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
         if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
             print(f"UNIDADES RECEBIDAS: {mov[4]}")
@@ -388,3 +402,15 @@ def deletar(cursor, conexao):
         print(f'[{produto}] DELETADO')
     except ValueError:
         print('INSIRA APENAS NÚMEROS')
+
+def historicoCadastro(cursor, conexao):
+    cursor.execute("""
+    SELECT * FROM  produtos                  
+    """) 
+    historico = cursor.fetchall()
+    if not historico:
+        print('AINDA NÃO HÁ PRODUTOS REGISTRADOS! ')
+    for mov in historico:
+        print(f"=========={mov[1]}===========")
+        print(f"ID DO PRODUTO: [{mov[0]}]")
+        print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')

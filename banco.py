@@ -9,17 +9,21 @@ def Bancos():
                 nome TEXT NOT NULL,
                 quantidade INTEGER NOT NULL,
                 preco REAL NOT NULL,
-                especificacao TEXT NOT NULL
+                especificacao TEXT NOT NULL,
+                dataCad TEXT NOT NULL,
+                horaCad TEXT NOT NULL
                     )
     """)
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS historico(
+    CREATE TABLE IF NOT EXISTS historicoMovimentacao(
                     id INTEGER PRIMARY KEY,
                     produto TEXT NOT NULL,
                     tipo TEXT NOT NULL,
                     stipo TEXT NOT NULL,
-                    quantidade INTEGER NOT NULL
+                    quantidade INTEGER NOT NULL,
+                    data TEXT NOT NULL,
+                    hora TEXT NOT NULL
                     )
     """)
 
