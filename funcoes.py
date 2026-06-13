@@ -112,9 +112,6 @@ def filtragemData(cursor, conexao, op):
                     return
         case _:
             print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 3')
-    
-
-
 def cadastro(cursor, conexao):
         import datetime as dt
         while True:
@@ -134,7 +131,7 @@ def cadastro(cursor, conexao):
                 v = float(input('Insira o valor que será cobrado pelo produto: '))
                 esp2 = ''
                 esp = input('Possui alguma especificação[S/N]? ')
-                if esp.lower() == 's' or esp.lower() == 'sim':
+                if esp.lower() in ('s', 'sim'):
                     esp2 = input('Insira a especificação: ')
                 data = dt.date.today().strftime("%m/%d/%Y")
                 hora = dt.datetime.now().time().strftime("%H:%M")
@@ -446,8 +443,6 @@ def listarProdutos(cursor, conexao):
 
 def historicoMovimentacao(cursor, conexao):
     op = "historicoMovimentacao"
-    import datetime as dt
-    from calendar import monthrange
     while True:
         try:
             cursor.execute("""
@@ -456,8 +451,9 @@ def historicoMovimentacao(cursor, conexao):
             historico = cursor.fetchall()
             if not historico:
                 print('AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES! ')
+                return
             filtro = input('Deseja utilizar filtro?')
-            if filtro.lower in ('s', 'sim'):
+            if filtro.lower() in ('s', 'sim'):
                 filtragemData(cursor, conexao, op)
             else:
                 for mov in historico:
@@ -533,19 +529,24 @@ def deletar(cursor, conexao):
         print('INSIRA APENAS NÚMEROS')
 
 def historicoCadastro(cursor, conexao):
-    op = "produtos"
-    cursor.execute("""
-    SELECT * FROM  produtos                  
-    """) 
-    historico = cursor.fetchall()
-    if not historico:
-        print('AINDA NÃO HÁ PRODUTOS REGISTRADOS! ')
-        return
-    filtro = input('Deseja utilizar filtro? ')
-    if filtro.lower() in ('s', 'sim'):
-        filtragemData(cursor, conexao, op)
-    else:
-        for mov in historico:
-            print(f"=========={mov[1]}===========")
-            print(f"ID DO PRODUTO: [{mov[0]}]")
-            print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
+    while True:
+        try:
+            op = "produtos"
+            cursor.execute("""
+            SELECT * FROM  produtos                  
+            """) 
+            historico = cursor.fetchall()
+            if not historico:
+                print('AINDA NÃO HÁ PRODUTOS REGISTRADOS! ')
+                return
+            filtro = input('Deseja utilizar filtro? ')
+            if filtro.lower() in ('s', 'sim'):
+                filtragemData(cursor, conexao, op)
+            else:
+                for mov in historico:
+                    print(f"=========={mov[1]}===========")
+                    print(f"ID DO PRODUTO: [{mov[0]}]")
+                    print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
+                    return
+        except ValueError:
+            print('ERRO! AS DATAS INSERIDAS NÃO ESTÃO NO FORMATO ESPERADO! ')
