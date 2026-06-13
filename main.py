@@ -1,5 +1,5 @@
 import sqlite3
-from funcoes import cadastro, movimentacao, listarHistorico, listarProdutos, editarSaldo, deletar, historicoCadastro
+from funcoes import cadastro, movimentacao, historicoMovimentacao, listarProdutos, editarSaldo, deletar, historicoCadastro
 from banco import Bancos
 
 Bancos()
@@ -38,7 +38,7 @@ while True:
             case 4:
                 movimentacao(cursor, conexao)
             case 5:
-               listarHistorico(cursor, conexao)
+               historicoMovimentacao(cursor, conexao)
             case 6:
                 deletar(cursor, conexao)
             case 7:
