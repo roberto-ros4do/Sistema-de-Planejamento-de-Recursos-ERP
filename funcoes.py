@@ -243,6 +243,7 @@ def listarProdutos(cursor, conexao):
             produtos = cursor.fetchall()
             if not produtos:
                 print('AINDA NÃO HÁ PRODUTOS CADASTRADOS!')
+                return
             else:
                 filtro = input('Deseja utilizar filtro? ')
                 if filtro.lower() in ('s', 'sim'):
@@ -254,25 +255,21 @@ def listarProdutos(cursor, conexao):
                         valorMin = float(valorMin)
                         if valorMin<=0:
                             print('INSIRA VALORES ACIMA DE 0 REAIS!')
-                            return
                     valorMax = input('Insira o valor máximo(ENTER para pular): ')
                     if valorMax!='':
                         valorMax = float(valorMax)
                         if valorMax<=0:
                             print('INSIRA VALORES ACIMA DE 0 REAIS!')
-                            return
                     estoqMin = input('Insira a disponibilidade mínima(ENTER para pular): ')
                     if estoqMin!='':
                         estoqMin = int(estoqMin)
                         if estoqMin<0:
                             print('INSIRA APENAS NÚMEROS POSITIVOS')
-                            return
                     estoqMax = input('Insira a disponibilidade máxima(ENTER para pular): ')
                     if estoqMax!='':
                         estoqMax=int(estoqMax)
                         if estoqMax<0:
                             print('INSIRA APENAS NÚMEROS POSITIVOS')
-                            return
                     if n!='':
                         query += " AND LOWER(nome) LIKE LOWER(?)"
                         parametros.append(f'%{n}%')
@@ -298,6 +295,14 @@ def listarProdutos(cursor, conexao):
                     produtos = cursor.fetchall()
                     if not produtos:
                         print('NÃO HÁ PRODUTOS COM ESTAS ESPECIFICAÇÕES')
+                    else:
+                        for produto in produtos:
+                            print(f"=========={produto[1]}===========")
+                            print(f"ID DO PRODUTO: [{produto[0]}]")
+                            print(f"DISPONIBILIDADE NO ESTOQUE: {produto[2]}")
+                            print(f"PREÇO: R$ {produto[3]}")
+                            if produto[4] != '':
+                                print(f"ESPECIFICAÇÃO: {produto[4]}")
                 else:
                     for produto in produtos:
                         print(f"=========={produto[1]}===========")
