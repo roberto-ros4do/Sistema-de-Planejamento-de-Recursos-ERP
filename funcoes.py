@@ -1,9 +1,23 @@
-from calendar import month
-
-
+def listarHistorico(op, historico):
+    if op == 'historicoMovimentacao':
+        for mov in historico:
+            print(f"=========={mov[1]}===========")
+            print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
+            print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
+            if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
+                print(f"UNIDADES RECEBIDAS: {mov[4]}")
+            else:
+                print(f"UNIDADES DESFAZIDAS: {mov[4]}")
+                return
+    else:
+        for mov in historico:
+            print(f"=========={mov[1]}===========")
+            print(f"ID DO PRODUTO: [{mov[0]}]")
+            print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
+        return
+    
 def filtragemData(cursor, conexao, op):
     import datetime as dt
-    from calendar import monthrange
     print('[1] ÚLTIMA SEMANA')
     print('[2] MÊS PASSADO')
     print('[3] INTERVALO DE DATAS')
@@ -21,22 +35,7 @@ def filtragemData(cursor, conexao, op):
                 print('NÃO HÁ RESULTADOS')
                 return
             else:  
-                if op == 'historicoMovimentacao':
-                    for mov in historico:
-                        print(f"=========={mov[1]}===========")
-                        print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
-                        print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
-                        if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
-                            print(f"UNIDADES RECEBIDAS: {mov[4]}")
-                        else:
-                            print(f"UNIDADES DESFAZIDAS: {mov[4]}")
-                    return
-                else:
-                    for mov in historico:
-                        print(f"=========={mov[1]}===========")
-                        print(f"ID DO PRODUTO: [{mov[0]}]")
-                        print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
-                    return
+                listarHistorico(op, historico)
         case 2:
             hoje = dt.date.today().strftime("%Y/%m/%d")
             mes = int(hoje[5:7]) - 1
@@ -55,22 +54,7 @@ def filtragemData(cursor, conexao, op):
                 print('NÃO HÁ RESULTADOS')
                 return
             else:   
-                if op == 'historicoMovimentacao':
-                    for mov in historico:
-                        print(f"=========={mov[1]}===========")
-                        print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
-                        print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
-                        if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
-                            print(f"UNIDADES RECEBIDAS: {mov[4]}")
-                        else:
-                            print(f"UNIDADES DESFAZIDAS: {mov[4]}")
-                    return
-                else:
-                    for mov in historico:
-                        print(f"=========={mov[1]}===========")
-                        print(f"ID DO PRODUTO: [{mov[0]}]")
-                        print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
-                    return
+                listarHistorico(op, historico)
         case 3:
             try:
                 dataInicial = input('Insira a data mais antiga(NO FORMATO AAAA/MM/DD): ')
@@ -86,26 +70,12 @@ def filtragemData(cursor, conexao, op):
                     print('NÃO HÁ RESULTADOS')
                     return
                 else:
-                    if op == 'historicoMovimentacao':
-                        for mov in historico:
-                            print(f"=========={mov[1]}===========")
-                            print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
-                            print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
-                            if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
-                                print(f"UNIDADES RECEBIDAS: {mov[4]}")
-                            else:
-                                print(f"UNIDADES DESFAZIDAS: {mov[4]}")
-                        return
-                    else:
-                        for mov in historico:
-                            print(f"=========={mov[1]}===========")
-                            print(f"ID DO PRODUTO: [{mov[0]}]")
-                            print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
-                        return
+                    listarHistorico(op, historico)
             except ValueError:
                 print('ERRO! DATAS INSERIDAS FORA DO FORMATO ESPERADO!')
         case _:
             print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 3')
+            
 def cadastro(cursor, conexao):
         import datetime as dt
         while True:
