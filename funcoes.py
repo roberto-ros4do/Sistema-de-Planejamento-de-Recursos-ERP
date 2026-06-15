@@ -8,30 +8,32 @@ def filtragemData(cursor, conexao, op):
     match escolha:
         case 1:
             hoje = dt.date.today().strftime("%d/%m/%Y")
-            us = int(hoje[1]) - 7 
+            us = int(hoje[0:2]) - 7 
+            ano = int(hoje[6:])
             if us <= 0:
-                mes = int(hoje[3]) - 1
-                ano = int(hoje[5])
+                mes = int(hoje[3:5]) - 1
+                if mes==0:
+                    mes = 12
+                    ano -= 1
                 diasMes = monthrange(ano, mes)[1]
                 dia= diasMes + us
                 dataUltima = dt.date(ano, mes, dia).strftime("%d/%m/%Y")
             else:
-                mes = int(hoje[3])
-                ano = int(hoje[5])
+                mes = int(hoje[3:5])
                 dataUltima = dt.date(ano, mes, us).strftime("%d/%m/%Y")
-            cursor.execute("""
-            SELECT * FROM ?
+            cursor.execute(f"""
+            SELECT * FROM {op}
             WHERE data BETWEEN ? AND ?
-            """, (op, dataUltima, hoje))
-            historico = cursor.fecthall()
+            """, (dataUltima, hoje))
+            historico = cursor.fetchall()
             if not historico:
                 print('NÃO HÁ RESULTADOS')
                 return
             else:  
-                if op == historicoMovimentacao:
+                if op == 'historicoMovimentacao':
                     for mov in historico:
                         print(f"=========={mov[1]}===========")
-                        print(f'REALIZADA EM {5} AS {6}')
+                        print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
                         print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
                         if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
                             print(f"UNIDADES RECEBIDAS: {mov[4]}")
@@ -46,28 +48,28 @@ def filtragemData(cursor, conexao, op):
                     return
         case 2:
             hoje = dt.date.today().strftime("%d/%m/%Y")
-            mes = int(hoje[3]) - 1
-            dia = int(hoje[1])
+            mes = int(hoje[3:5]) - 1
+            dia = int(hoje[0:2])
             if mes <= 0:
-                ano = int(hoje[5]) - 1
+                ano = int(hoje[6:]) - 1
                 mes = 12 + mes
                 dataUltima = dt.date(ano, mes, dia).strftime("%d/%m/%Y")
             else:
-                ano = int(hoje[5])
+                ano = int(hoje[5:])
                 dataUltima = dt.date(ano, mes, dia).strftime("%d/%m/%Y")
-            cursor.execute("""
-            SELECT * FROM ?
+            cursor.execute(f"""
+            SELECT * FROM {op}
             WHERE data BETWEEN ? AND ?
-            """, (op, dataUltima, hoje))
-            historico = cursor.fecthall()
+            """, (dataUltima, hoje))
+            historico = cursor.fethall()
             if not historico:
                 print('NÃO HÁ RESULTADOS')
                 return
             else:   
-                if op == historicoMovimentacao:
+                if op == 'historicoMovimentacao':
                     for mov in historico:
                         print(f"=========={mov[1]}===========")
-                        print(f'REALIZADA EM {5} AS {6}')
+                        print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
                         print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
                         if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
                             print(f"UNIDADES RECEBIDAS: {mov[4]}")
@@ -85,19 +87,19 @@ def filtragemData(cursor, conexao, op):
             verificData = dt.datetime.strptime(dataInicial, "%d/%m/%Y")
             dataUltima = input('Insira a data mais recente(NO FORMATO DD/MM/AA): ')
             verificData = dt.datetime.strptime(dataUltima, "%d/%m/%Y")
-            cursor.execute("""
-            SELECT * FROM ?
+            cursor.execute(f"""
+            SELECT * FROM {op}
             WHERE data BETWEEN ? AND ?
-            """, (op, dataInicial, dataUltima))
-            historico = cursor.fecthall()
+            """, (dataInicial, dataUltima))
+            historico = cursor.fethall()
             if not historico:
                 print('NÃO HÁ RESULTADOS')
                 return
             else:
-                if op == historicoMovimentacao:
+                if op == 'historicoMovimentacao':
                     for mov in historico:
                         print(f"=========={mov[1]}===========")
-                        print(f'REALIZADA EM {5} AS {6}')
+                        print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
                         print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
                         if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
                             print(f"UNIDADES RECEBIDAS: {mov[4]}")
@@ -136,8 +138,8 @@ def cadastro(cursor, conexao):
                 data = dt.date.today().strftime("%m/%d/%Y")
                 hora = dt.datetime.now().time().strftime("%H:%M")
                 cursor.execute("""
-                INSERT INTO produtos (nome, quantidade, preco, especificacao, dataCad, horaCad)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO produtos (nome, quantidade, preco, especificacao, data, hora)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """, (n, q, v, esp2, data, hora))
                 cursor.execute("""
                 UPDATE SALDO
@@ -145,6 +147,7 @@ def cadastro(cursor, conexao):
                 WHERE id = 1          
                 """, (invest,))
                 conexao.commit()
+                return
             except ValueError:
                 print('ERRO! INSIRA APENAS NÚMEROS')
 
@@ -525,6 +528,7 @@ def deletar(cursor, conexao):
         WHERE id = ?
         """, (idProd,))
         print(f'[{produto}] DELETADO')
+        conexao.commit()
     except ValueError:
         print('INSIRA APENAS NÚMEROS')
 

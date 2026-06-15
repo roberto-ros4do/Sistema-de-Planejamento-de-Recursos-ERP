@@ -45,14 +45,14 @@ while True:
                editarSaldo(cursor, conexao)
             case 8:
                 print('SAINDO...')
-                conexao.close()
                 break
             case _:
                 print('ERRO: INSIRA UM VALOR ENTRE 1 E 7 ')
     except ValueError:
         print('ERRO: INSIRA UM VALOR ENTRE 1 A 7')
     continuar = input('AINDA DESEJA UTILIZAR O SISTEMA[S/N]? ')
-    if continuar.lower() != 's' and continuar.lower() != 'sim':
+    if continuar.lower() in ('s', 'sim'):
         conexao.close()
         break
+conexao.close()
 
