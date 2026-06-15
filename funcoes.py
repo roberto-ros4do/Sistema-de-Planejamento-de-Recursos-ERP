@@ -1,3 +1,6 @@
+from calendar import month
+
+
 def filtragemData(cursor, conexao, op):
     import datetime as dt
     from calendar import monthrange
@@ -7,20 +10,8 @@ def filtragemData(cursor, conexao, op):
     escolha = int(input('Qual opção escolhida? '))
     match escolha:
         case 1:
-            hoje = dt.date.today().strftime("%d/%m/%Y")
-            us = int(hoje[0:2]) - 7 
-            ano = int(hoje[6:])
-            if us <= 0:
-                mes = int(hoje[3:5]) - 1
-                if mes==0:
-                    mes = 12
-                    ano -= 1
-                diasMes = monthrange(ano, mes)[1]
-                dia= diasMes + us
-                dataUltima = dt.date(ano, mes, dia).strftime("%d/%m/%Y")
-            else:
-                mes = int(hoje[3:5])
-                dataUltima = dt.date(ano, mes, us).strftime("%d/%m/%Y")
+            hoje = dt.date.today()
+            dataUltima = hoje - dt.timedelta(days=7)
             cursor.execute(f"""
             SELECT * FROM {op}
             WHERE data BETWEEN ? AND ?
@@ -47,16 +38,14 @@ def filtragemData(cursor, conexao, op):
                         print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
                     return
         case 2:
-            hoje = dt.date.today().strftime("%d/%m/%Y")
-            mes = int(hoje[3:5]) - 1
-            dia = int(hoje[0:2])
-            if mes <= 0:
-                ano = int(hoje[6:]) - 1
-                mes = 12 + mes
-                dataUltima = dt.date(ano, mes, dia).strftime("%d/%m/%Y")
-            else:
-                ano = int(hoje[5:])
-                dataUltima = dt.date(ano, mes, dia).strftime("%d/%m/%Y")
+            hoje = dt.date.today().strftime("%Y/%m/%d")
+            mes = int(hoje[5:7]) - 1
+            dia = int(hoje[8:])
+            ano = int(hoje[0:4])
+            if mes == 0:
+                ano -= 1
+                mes = 12
+            dataUltima = dt.date(ano, mes, dia).strftime("%Y/%m/%d")
             cursor.execute(f"""
             SELECT * FROM {op}
             WHERE data BETWEEN ? AND ?
@@ -83,35 +72,38 @@ def filtragemData(cursor, conexao, op):
                         print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
                     return
         case 3:
-            dataInicial = input('Insira a data mais antiga(NO FORMATO DD/MM/AA): ')
-            verificData = dt.datetime.strptime(dataInicial, "%d/%m/%Y")
-            dataUltima = input('Insira a data mais recente(NO FORMATO DD/MM/AA): ')
-            verificData = dt.datetime.strptime(dataUltima, "%d/%m/%Y")
-            cursor.execute(f"""
-            SELECT * FROM {op}
-            WHERE data BETWEEN ? AND ?
-            """, (dataInicial, dataUltima))
-            historico = cursor.fethall()
-            if not historico:
-                print('NÃO HÁ RESULTADOS')
-                return
-            else:
-                if op == 'historicoMovimentacao':
-                    for mov in historico:
-                        print(f"=========={mov[1]}===========")
-                        print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
-                        print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
-                        if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
-                            print(f"UNIDADES RECEBIDAS: {mov[4]}")
-                        else:
-                            print(f"UNIDADES DESFAZIDAS: {mov[4]}")
+            try:
+                dataInicial = input('Insira a data mais antiga(NO FORMATO AAAA/MM/DD): ')
+                verificData = dt.datetime.strptime(dataInicial, "%Y/%m/%d")
+                dataUltima = input('Insira a data mais recente(NO FORMATO AAAA/MM/DD): ')
+                verificData = dt.datetime.strptime(dataUltima, "%Y/%m/%d")
+                cursor.execute(f"""
+                SELECT * FROM {op}
+                WHERE data BETWEEN ? AND ?
+                """, (dataInicial, dataUltima))
+                historico = cursor.fetchall()
+                if not historico:
+                    print('NÃO HÁ RESULTADOS')
                     return
                 else:
-                    for mov in historico:
-                        print(f"=========={mov[1]}===========")
-                        print(f"ID DO PRODUTO: [{mov[0]}]")
-                        print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
-                    return
+                    if op == 'historicoMovimentacao':
+                        for mov in historico:
+                            print(f"=========={mov[1]}===========")
+                            print(f'REALIZADA EM {mov[5]} AS {mov[6]}')
+                            print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
+                            if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
+                                print(f"UNIDADES RECEBIDAS: {mov[4]}")
+                            else:
+                                print(f"UNIDADES DESFAZIDAS: {mov[4]}")
+                        return
+                    else:
+                        for mov in historico:
+                            print(f"=========={mov[1]}===========")
+                            print(f"ID DO PRODUTO: [{mov[0]}]")
+                            print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
+                        return
+            except ValueError:
+                print('ERRO! DATAS INSERIDAS FORA DO FORMATO ESPERADO!')
         case _:
             print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 3')
 def cadastro(cursor, conexao):
@@ -135,7 +127,7 @@ def cadastro(cursor, conexao):
                 esp = input('Possui alguma especificação[S/N]? ')
                 if esp.lower() in ('s', 'sim'):
                     esp2 = input('Insira a especificação: ')
-                data = dt.date.today().strftime("%m/%d/%Y")
+                data = dt.date.today().strftime("%Y/%m/%d")
                 hora = dt.datetime.now().time().strftime("%H:%M")
                 cursor.execute("""
                 INSERT INTO produtos (nome, quantidade, preco, especificacao, data, hora)
@@ -447,29 +439,26 @@ def listarProdutos(cursor, conexao):
 def historicoMovimentacao(cursor, conexao):
     op = "historicoMovimentacao"
     while True:
-        try:
-            cursor.execute("""
-            SELECT * FROM  historicoMovimentação                  
-            """) 
-            historico = cursor.fetchall()
-            if not historico:
-                print('AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES! ')
-                return
-            filtro = input('Deseja utilizar filtro?')
-            if filtro.lower() in ('s', 'sim'):
-                filtragemData(cursor, conexao, op)
-            else:
-                for mov in historico:
-                    print(f"=========={mov[1]}===========")
-                    print(f'REALIZADA EM {5} AS {6}')
-                    print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
-                    if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
-                        print(f"UNIDADES RECEBIDAS: {mov[4]}")
-                    else:
-                        print(f"UNIDADES DESFAZIDAS: {mov[4]}")
-                return
-        except ValueError:
-            print('ERRO! AS DATAS INSERIDAS NÃO ESTÃO NO FORMATO ESPERADO!')
+        cursor.execute("""
+        SELECT * FROM  historicoMovimentação                  
+        """) 
+        historico = cursor.fetchall()
+        if not historico:
+            print('AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES! ')
+            return
+        filtro = input('Deseja utilizar filtro?')
+        if filtro.lower() in ('s', 'sim'):
+            filtragemData(cursor, conexao, op)
+        else:
+            for mov in historico:
+                print(f"=========={mov[1]}===========")
+                print(f'REALIZADA EM {5} AS {6}')
+                print(f"TIPO DE MOVIMENTAÇÃO {mov[2]}")
+                if mov[3] == 'COMPRA' or mov[3] == 'DEVOLUÇÃO':
+                    print(f"UNIDADES RECEBIDAS: {mov[4]}")
+                else:
+                    print(f"UNIDADES DESFAZIDAS: {mov[4]}")
+            return
 
 def editarSaldo(cursor, conexao):
     cursor.execute("""
@@ -534,23 +523,20 @@ def deletar(cursor, conexao):
 
 def historicoCadastro(cursor, conexao):
     while True:
-        try:
-            op = "produtos"
-            cursor.execute("""
-            SELECT * FROM  produtos                  
-            """) 
-            historico = cursor.fetchall()
-            if not historico:
-                print('AINDA NÃO HÁ PRODUTOS REGISTRADOS! ')
+        op = "produtos"
+        cursor.execute("""
+        SELECT * FROM  produtos                  
+        """) 
+        historico = cursor.fetchall()
+        if not historico:
+            print('AINDA NÃO HÁ PRODUTOS REGISTRADOS! ')
+            return
+        filtro = input('Deseja utilizar filtro? ')
+        if filtro.lower() in ('s', 'sim'):
+            filtragemData(cursor, conexao, op)
+        else:
+            for mov in historico:
+                print(f"=========={mov[1]}===========")
+                print(f"ID DO PRODUTO: [{mov[0]}]")
+                print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
                 return
-            filtro = input('Deseja utilizar filtro? ')
-            if filtro.lower() in ('s', 'sim'):
-                filtragemData(cursor, conexao, op)
-            else:
-                for mov in historico:
-                    print(f"=========={mov[1]}===========")
-                    print(f"ID DO PRODUTO: [{mov[0]}]")
-                    print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
-                    return
-        except ValueError:
-            print('ERRO! AS DATAS INSERIDAS NÃO ESTÃO NO FORMATO ESPERADO! ')
