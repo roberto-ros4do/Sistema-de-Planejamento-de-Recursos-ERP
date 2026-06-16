@@ -531,7 +531,7 @@ def exportarCsv(cursor, conexao):
                     if df.empty:
                             print('NÃO HÁ PRODUTOS CADASTRADOS')
                             return
-                    df.to_csv(f"produtos{dt.date.today().strftime("%d.%m.%Y")}.csv", index=False)
+                    df.to_csv(f"produtos_{dt.datetime.now().strftime('%d.%m.%Y_%H.%M')}.csv", index=False)
                     print('RELATÓRIO EXPORTADO COM SUCESSO!')
                     return
                 case 2:
@@ -549,7 +549,7 @@ def exportarCsv(cursor, conexao):
                             if df.empty:
                                 print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
                                 return
-                            df.to_csv(f"movimentacoes{dt.date.today().strftime("%d.%m.%Y")}.csv", index=False)
+                            df.to_csv(f"movimentacoes_{dt.datetime.now().strftime('%d.%m.%Y_%H.%M')}.csv", index=False)
                             print('RELATÓRIO EXPORTADO COM SUCESSO!')
                             return
                         case 2:
@@ -557,10 +557,10 @@ def exportarCsv(cursor, conexao):
                             mes = int(hoje[5:7]) - 1
                             dia = int(hoje[8:])
                             ano = int(hoje[0:4])
-                            ultimoDia = monthrange(ano, mes)[1]
                             if mes == 0:
                                 ano -= 1
                                 mes = 12
+                            ultimoDia = monthrange(ano, mes)[1]
                             if dia > ultimoDia:
                                 dia = ultimoDia
                             dataUltima = dt.date(ano, mes, dia).strftime("%Y/%m/%d")
@@ -569,7 +569,7 @@ def exportarCsv(cursor, conexao):
                             if df.empty:
                                 print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
                                 return
-                            df.to_csv(f"movimentacoes{dt.date.today().strftime("%d.%m.%Y")}.csv", index=False)
+                            df.to_csv(f"movimentacoes_{dt.datetime.now().strftime('%d.%m.%Y_%H.%M')}.csv", index=False)
                             print('RELATÓRIO EXPORTADO COM SUCESSO!')
                             return
                         case 3:
@@ -583,7 +583,7 @@ def exportarCsv(cursor, conexao):
                                 if df.empty:
                                     print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
                                     return
-                                df.to_csv(f"movimentacoes{dt.date.today().strftime("%d.%m.%Y")}.csv", index=False)
+                                df.to_csv(f"movimentacoes_{dt.datetime.now().strftime('%d.%m.%Y_%H.%M')}.csv", index=False)
                                 print('RELATÓRIO EXPORTADO COM SUCESSO!')
                                 return
                             except ValueError:
