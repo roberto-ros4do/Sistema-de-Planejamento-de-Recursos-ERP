@@ -16,8 +16,9 @@ def listarHistorico(op, historico):
             print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
         return
     
-def filtragemData(cursor, conexao, op):
+def filtragemData(cursor, op):
     import datetime as dt
+    from calendar import monthrange
     print('[1] ÚLTIMA SEMANA')
     print('[2] MÊS PASSADO')
     print('[3] INTERVALO DE DATAS')
@@ -29,7 +30,7 @@ def filtragemData(cursor, conexao, op):
             cursor.execute(f"""
             SELECT * FROM {op}
             WHERE data BETWEEN ? AND ?
-            """, (dataUltima, hoje))
+            """, (dataUltima.strftime("%Y/%m/%d"), hoje.strftime("%Y/%m/%d")))
             historico = cursor.fetchall()
             if not historico:
                 print('NÃO HÁ RESULTADOS')
@@ -41,15 +42,18 @@ def filtragemData(cursor, conexao, op):
             mes = int(hoje[5:7]) - 1
             dia = int(hoje[8:])
             ano = int(hoje[0:4])
+            ultimoDia = monthrange(ano, mes)[1]
             if mes == 0:
                 ano -= 1
                 mes = 12
+            if dia > ultimoDia:
+                dia = ultimoDia
             dataUltima = dt.date(ano, mes, dia).strftime("%Y/%m/%d")
             cursor.execute(f"""
             SELECT * FROM {op}
             WHERE data BETWEEN ? AND ?
             """, (dataUltima, hoje))
-            historico = cursor.fethall()
+            historico = cursor.fetchall()
             if not historico:
                 print('NÃO HÁ RESULTADOS')
                 return
@@ -75,7 +79,7 @@ def filtragemData(cursor, conexao, op):
                 print('ERRO! DATAS INSERIDAS FORA DO FORMATO ESPERADO!')
         case _:
             print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 3')
-            
+
 def cadastro(cursor, conexao):
         import datetime as dt
         while True:
@@ -326,7 +330,7 @@ def movimentacao(cursor, conexao):
         except ValueError:
             print('INSIRA APENAS NÚMEROS')
 
-def listarProdutos(cursor, conexao):
+def listarProdutos(cursor):
     while True:
         try:
             cursor.execute("""
@@ -406,7 +410,7 @@ def listarProdutos(cursor, conexao):
         except ValueError:
                   print('ERRO! INSIRA APENAS NÚMEROS NOS FILTROS DE PREÇO E ESTOQUE')    
 
-def historicoMovimentacao(cursor, conexao):
+def historicoMovimentacao(cursor):
     op = "historicoMovimentacao"
     while True:
         cursor.execute("""
@@ -418,7 +422,7 @@ def historicoMovimentacao(cursor, conexao):
             return
         filtro = input('Deseja utilizar filtro?')
         if filtro.lower() in ('s', 'sim'):
-            filtragemData(cursor, conexao, op)
+            filtragemData(cursor, op)
         else:
             for mov in historico:
                 print(f"=========={mov[1]}===========")
@@ -451,7 +455,7 @@ def editarSaldo(cursor, conexao):
                     WHERE id = 1           
                      """, (ap,))
                     conexao.commit()
-                    break
+                    return
                 case 2:
                     ret = float(input('Quanto deseja retirar '))
                     if saldo<ret:
@@ -464,7 +468,7 @@ def editarSaldo(cursor, conexao):
                     WHERE id = 1   
                     """, (ret,))
                     conexao.commit()
-                    break
+                    return
                 case _:
                     print('INSIRA APENAS NÚMEROS DE 1 A 2 ')
         except ValueError:
@@ -491,7 +495,7 @@ def deletar(cursor, conexao):
     except ValueError:
         print('INSIRA APENAS NÚMEROS')
 
-def historicoCadastro(cursor, conexao):
+def historicoCadastro(cursor):
     while True:
         op = "produtos"
         cursor.execute("""
@@ -503,10 +507,90 @@ def historicoCadastro(cursor, conexao):
             return
         filtro = input('Deseja utilizar filtro? ')
         if filtro.lower() in ('s', 'sim'):
-            filtragemData(cursor, conexao, op)
+            filtragemData(cursor, op)
         else:
             for mov in historico:
                 print(f"=========={mov[1]}===========")
                 print(f"ID DO PRODUTO: [{mov[0]}]")
                 print(f'CADASTRADO EM {mov[5]} AS {mov[6]}')
                 return
+
+def exportarCsv(cursor, conexao):
+    import pandas as pd
+    import datetime as dt
+    from calendar import monthrange
+
+    while True:
+        try:
+            print('[1] PRODUTOS')
+            print('[2] MOVIMENTAÇÃO')
+            rel = int(input('Qual relatório deseja gerar? '))
+            match rel:
+                case 1:
+                    df = pd.read_sql_query("SELECT id, nome, quantidade, preco FROM produtos ", conexao)
+                    if df.empty:
+                            print('NÃO HÁ PRODUTOS CADASTRADOS')
+                            return
+                    df.to_csv("produtos.csv", index=False)
+                    print('RELATÓRIO EXPORTADO COM SUCESSO!')
+                    return
+                case 2:
+                    print('FILTRAR POR:')
+                    print('[1] ÚLTIMA SEMANA')
+                    print('[2] ÚLTIMO MÊS')
+                    print('[3] INTERVALO DE DATAS')
+                    rel2 = int(input('Escolha uma opção: '))
+                    match rel2:
+                        case 1:
+                            hoje = dt.date.today()
+                            dataUltima = hoje - dt.timedelta(days=7)
+                            df = pd.read_sql_query("""SELECT produto, tipo, stipo, quantidade FROM historicoMovimentacao
+                            WHERE data BETWEEN ? AND ?""", conexao, params=(dataUltima, hoje))
+                            if df.empty:
+                                print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
+                                return
+                            df.to_csv("movimentacoes.csv", index=False)
+                            print('RELATÓRIO EXPORTADO COM SUCESSO!')
+                            return
+                        case 2:
+                            hoje = dt.date.today().strftime("%Y/%m/%d")
+                            mes = int(hoje[5:7]) - 1
+                            dia = int(hoje[8:])
+                            ano = int(hoje[0:4])
+                            ultimoDia = monthrange(ano, mes)[1]
+                            if mes == 0:
+                                ano -= 1
+                                mes = 12
+                            if dia > ultimoDia:
+                                dia = ultimoDia
+                            dataUltima = dt.date(ano, mes, dia).strftime("%Y/%m/%d")
+                            df = pd.read_sql_query("""SELECT produto, tipo, stipo, quantidade FROM historicoMovimentacao
+                            WHERE data BETWEEN ? AND ?""", conexao, params=(dataUltima, hoje))
+                            if df.empty:
+                                print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
+                                return
+                            df.to_csv("movimentacoes.csv", index=False)
+                            print('RELATÓRIO EXPORTADO COM SUCESSO!')
+                            return
+                        case 3:
+                            try:
+                                dataInicial = input('Insira a data mais antiga(NO FORMATO AAAA/MM/DD): ')
+                                verificData = dt.datetime.strptime(dataInicial, "%Y/%m/%d")
+                                dataUltima = input('Insira a data mais recente(NO FORMATO AAAA/MM/DD): ')
+                                verificData = dt.datetime.strptime(dataUltima, "%Y/%m/%d")
+                                df = pd.read_sql_query("""SELECT produto, tipo, stipo, quantidade FROM historicoMovimentacao
+                                WHERE data BETWEEN ? AND ?""", conexao, params=(dataInicial, dataUltima))
+                                if df.empty:
+                                    print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
+                                    return
+                                df.to_csv("movimentacoes.csv", index=False)
+                                print('RELATÓRIO EXPORTADO COM SUCESSO!')
+                                return
+                            except ValueError:
+                                print('ERRO! AS DATAS NÃO ESTÃO NO FORMATO ESPERADO!')
+                        case _:
+                            print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 3!')
+                case _:
+                    print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 3!')
+        except ValueError:
+            print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 3!')
