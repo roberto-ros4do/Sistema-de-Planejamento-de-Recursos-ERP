@@ -531,7 +531,7 @@ def exportarCsv(cursor, conexao):
                     if df.empty:
                             print('NÃO HÁ PRODUTOS CADASTRADOS')
                             return
-                    df.to_csv("produtos.csv", index=False)
+                    df.to_csv(f"produtos{dt.date.today().strftime("%d.%m.%Y")}.csv", index=False)
                     print('RELATÓRIO EXPORTADO COM SUCESSO!')
                     return
                 case 2:
@@ -549,7 +549,7 @@ def exportarCsv(cursor, conexao):
                             if df.empty:
                                 print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
                                 return
-                            df.to_csv("movimentacoes.csv", index=False)
+                            df.to_csv(f"movimentacoes{dt.date.today().strftime("%d.%m.%Y")}.csv", index=False)
                             print('RELATÓRIO EXPORTADO COM SUCESSO!')
                             return
                         case 2:
@@ -569,7 +569,7 @@ def exportarCsv(cursor, conexao):
                             if df.empty:
                                 print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
                                 return
-                            df.to_csv("movimentacoes.csv", index=False)
+                            df.to_csv(f"movimentacoes{dt.date.today().strftime("%d.%m.%Y")}.csv", index=False)
                             print('RELATÓRIO EXPORTADO COM SUCESSO!')
                             return
                         case 3:
@@ -583,7 +583,7 @@ def exportarCsv(cursor, conexao):
                                 if df.empty:
                                     print('NÃO HÁ MOVIMENTAÇÕES NESTE INTERVALO DE TEMPO')
                                     return
-                                df.to_csv("movimentacoes.csv", index=False)
+                                df.to_csv(f"movimentacoes{dt.date.today().strftime("%d.%m.%Y")}.csv", index=False)
                                 print('RELATÓRIO EXPORTADO COM SUCESSO!')
                                 return
                             except ValueError:
