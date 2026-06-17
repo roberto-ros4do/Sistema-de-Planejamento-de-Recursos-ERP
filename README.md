@@ -1,154 +1,148 @@
-# ERP CRUD Console em Python
+# ERP de Controle de Estoque e Movimentações
 
-Sistema simples de Planejamento de Recursos Empresariais (ERP) CRUD desenvolvido em Python no terminal, com foco em:
+Este ERP de Controle de Estoque e Movimentações é um sistema desenvolvido em Python com o objetivo de auxiliar no gerenciamento de produtos, estoque, saldo financeiro e movimentações empresariais.
 
-* controle de estoque
-* movimentações de produtos
-* controle financeiro
-* persistência de dados
-* aprendizado de SQL e SQLite
+O projeto foi criado como trabalho acadêmico e vem sendo expandido continuamente para simular funcionalidades encontradas em sistemas ERP reais. Atualmente, o sistema opera via terminal e utiliza banco de dados SQLite para persistência de dados.
 
----
+## Tecnologias utilizadas
+Python 3
+SQLite3
+Pandas
+CSV
+Datetime
 
-# Objetivo do Projeto
+## Funcionalidades
+### Gestão de Produtos
+Cadastro de produtos
+Registro de:
+Nome
+Quantidade em estoque
+Preço de venda
+Especificações
+Controle de investimento inicial
+Exclusão de produtos
+#### Controle de Estoque
+Atualização automática de estoque através das movimentações
+Consulta de produtos cadastrados
+Filtros por:
+Nome
+Quantidade
+Valor
+### Controle Financeiro
+Registro de saldo disponível
+Aplicação de recursos
+Retirada de recursos
+Desconto automático de investimentos realizados no cadastro de produtos
+### Movimentações
 
-Este projeto foi criado com fins de estudo e evolução prática em:
+Registro de:
 
-* Python
-* Modularização
-* Banco de dados SQLite
-* Operações SQL
+Compras
+Vendas
+Devoluções
+Perdas
+Transferências
 
-O sistema começou utilizando armazenamento em JSON e posteriormente foi migrado para SQLite para melhorar persistência, organização e escalabilidade dos dados.
+Cada movimentação possui:
 
----
+Produto relacionado
+Quantidade
+Data
+Horário
 
-# Funcionalidades
+### Histórico
+Histórico de cadastro de produt
+Histórico de movimentações
+Filtragem por período:
+Última semana
+Último mês
+Intervalo personalizado de datas
 
-## Cadastro de Produtos
+###Relatórios
+Exportação de relatórios em formato CSV
+Relatório de produtos
+Relatório de movimentações filtradas por período
 
-* nome
-* quantidade em estoque
-* preço
-* especificações
+## Pré-requisitos
 
----
+Antes de executar o projeto, é necessário ter instalado:
 
-## Movimentações
+Python 3.10 ou superior
+Pip
+Bibliotecas necessárias
 
-### Entradas
-
-* compra
-* devolução
-
-### Saídas
-
-* venda
-* perda
-* transferência
-
----
-
-## Controle Financeiro
-
-* saldo da empresa
-* aplicações
-* retiradas
-* atualização automática após movimentações
-
----
-
-## Relatórios
-
-* listagem de produtos
-* histórico de movimentações
-
-# Tecnologias Utilizadas
-
-* Python 3
-* SQLite3
-
----
-
-# Conceitos Aplicados
-
-## Python
-
-* funções
-* modularização
-* loops
-* tratamento de exceções
-* listas e dicionários
-* persistência de dados
-
----
-
-## SQLite
-
-* CREATE TABLE
-* INSERT
-* SELECT
-* UPDATE
-* fetchone()
-* fetchall()
-* commit()
-* banco relacional
-
----
-
-# Evolução do Projeto
-
-## Versão 1 — JSON
-
-A primeira versão utilizava:
-
-```python
-json.load()
-json.dump()
-```
-
-Os dados eram armazenados em arquivos `.json`.
-
-Essa etapa foi importante para entender persistência de dados e estruturação do sistema.
-
----
-
-## Versão 2 — SQLite
-
-O projeto foi refatorado para utilizar SQLite.
-
-Melhorias obtidas:
-
-* persistência relacional
-* manipulação mais segura dos dados
-* melhor escalabilidade
-* uso real de banco de dados
-* aprendizado de SQL aplicado na prática
-
----
-
-# Como Executar
-
-## Clone o repositório
+Instale as dependências utilizando:
 
 ```bash
-git clone <url-do-repositorio>
+pip install pandas
 ```
+As demais bibliotecas utilizadas (sqlite3, datetime e csv) fazem parte da biblioteca padrão do Python.
 
----
-
-## Execute o projeto
-
+## Instalação
+Clone o repositório:
 ```bash
-python main.py
+git clone https://github.com/seu-usuario/nome-do-repositorio.git
+```
+Acesse a pasta do projeto:
+```bash
+cd nome-do-repositorio
 ```
 
----
+## Como Utilizar
 
-# Melhorias Futuras
+Ao iniciar o sistema, será exibido um menu principal:
+```bash
+[1] CADASTRAR PRODUTOS
+[2] LISTAGEM DE PRODUTOS
+[3] HISTÓRICO DE CADASTRO
+[4] REGISTRAR MOVIMENTAÇÃO
+[5] HISTÓRICO DE MOVIMENTAÇÕES
+[6] EXPORTAR RELATÓRIO CSV
+[7] DELETAR PRODUTO
+[8] EDITAR SALDO
+[9] SAIR DO SISTEMA
+Cadastro de Produtos
+```
 
-* autenticação de usuários
-* relatórios gerenciais
-* interface gráfica
-<<<<<<< HEAD
-* Integração web com Flask
+**Permite registrar novos produtos informando:**
+
+Nome
+Quantidade inicial
+Valor de venda
+Especificações
+Valor investido
+Registro de Movimentações
+
+**Permite controlar entradas e saídas do estoque:**
+
+Entradas
+Compra
+Devolução
+Saídas
+Venda
+Perda
+Transferência
+
+**Histórico de Cadastros:**
+Consulta todos os produtos cadastrados com data e horário de registro.
+
+**Histórico de Movimentações:**
+Permite consultar movimentações registradas e filtrá-las por período.
+
+**Exportação CSV:**
+Gera relatórios que podem ser abertos em:
+
+Microsoft Excel
+LibreOffice Calc
+Google Sheets
+
+## Próximas Implementações
+Sistema de Login
+Interface gráfica
+Relatório gerencial
+Alertas inteligentes de estoque
+API REST
+Dashboard de indicadores
+Testes automatizados
+
+Desenvolvido por [Seu Nome] como projeto de estudo e trabalho acadêmico, com foco na evolução contínua das habilidades em desenvolvimento de software, banco de dados e arquitetura de sistemas.
