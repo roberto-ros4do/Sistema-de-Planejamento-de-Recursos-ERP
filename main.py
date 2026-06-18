@@ -1,5 +1,5 @@
 import sqlite3
-from funcoes import cadastro, movimentacao, historicoMovimentacao, listarProdutos, editarSaldo, deletar, historicoCadastro, exportarCsv
+from interface import terminal as i
 from banco import Bancos
 
 Bancos()
@@ -31,21 +31,21 @@ while True:
         funcao = int(input('QUAL FUNÇÃO DESEJA REALIZAR? '))
         match funcao:
             case 1:
-                cadastro(cursor, conexao)
+                i.telaCadastroProduto(cursor, conexao)
             case 2:
-                listarProdutos(cursor)
+                i.telaListagemProdutos(cursor, conexao)
             case 3:
-                historicoCadastro(cursor)
+                i.telaHistoricoCadProdutos(cursor, conexao)
             case 4:
-                movimentacao(cursor, conexao)
+                i.telaRegMov(cursor, conexao)
             case 5:
-               historicoMovimentacao(cursor)
+               i.telaHistMov(cursor, conexao)
             case 6:
-                exportarCsv(cursor)
+                i.telaRel(conexao)
             case 7:
-                deletar(cursor, conexao)
+                i.telaDeletar(cursor, conexao)
             case 8:
-               editarSaldo(cursor, conexao)
+               i.telaEditarSaldo(cursor, conexao)
             case 9:
                 print('SAINDO...')
                 break
