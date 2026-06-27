@@ -54,7 +54,7 @@ def deletarProduto(idProd, cursor):
     """, (idProd,))
     return deletado
 
-def consultaProdutos(cursor, unidades=0):
+def consultaProdutos(cursor):
     cursor.execute("""
     SELECT * FROM  produtos                  
     """)                  

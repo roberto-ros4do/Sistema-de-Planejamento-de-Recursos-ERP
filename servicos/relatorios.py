@@ -34,5 +34,5 @@ def lerDados(rel, conexao, rel2=0, dataInicial=0, dataUltima=0 ):
             WHERE data BETWEEN ? AND ?""", conexao, params=(dataInicial, dataUltima))
             return df
 
-def gerarRel(df):
-    df.to_csv(f"produtos_{dt.datetime.now().strftime('%d.%m.%Y_%H.%M')}.csv", index=False)
+def gerarRel(df, nomeArquivo):
+    df.to_csv(f"{nomeArquivo}_{dt.datetime.now().strftime('%d.%m.%Y_%H.%M')}.csv", index=False)

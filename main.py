@@ -54,7 +54,7 @@ while True:
     except ValueError:
         print('ERRO: INSIRA UM VALOR ENTRE 1 A 7')
     continuar = input('AINDA DESEJA UTILIZAR O SISTEMA[S/N]? ')
-    if continuar.lower() in ('s', 'sim'):
+    if continuar.lower() not in ('s', 'sim'):
         break
 conexao.close()
 
