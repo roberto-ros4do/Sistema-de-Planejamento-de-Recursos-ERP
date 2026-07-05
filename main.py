@@ -3,9 +3,13 @@ from interface import terminal as i
 from banco import Bancos
 
 Bancos()
-
 conexao = sqlite3.connect("banco.db")
 cursor = conexao.cursor()
+
+print('----------------SEJA BEM VINDO!-------------------')
+'''
+i.telaLogin(cursor, conexao)
+'''
 
 while True:
     cursor.execute("""
@@ -13,7 +17,6 @@ while True:
     WHERE id = 1
     """)
     saldo = cursor.fetchone()[0]
-
     print('------PLANEJAMENTO DE RECURSOS EMPRESARIAIS-------')
     print('------------------------------')
     print(f'SALDO: R$ {saldo:.2f}')

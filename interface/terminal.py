@@ -1,5 +1,38 @@
 import servicos as s
+from servicos import produtos as p
+from servicos import movimentacoes as m
+from servicos import relatorios as r
+from servicos import saldo as s
+from servicos import login as l
+from servicos import filtro as f
 import datetime as dt
+
+def telaLogin(cursor, conexao):
+    while True:
+        try:
+            print("[1] ENTRAR")
+            print('[2] CADASTRAR-SE')
+            op = int(input('Qual opção?: '))
+            match op:
+                case 1:
+                    login = input('Insira seu login: ')
+                    senha = input('Insira sua senha')
+                    existe = l.verificaLogin(cursor, conexao, login, senha)
+                    if existe:
+                        return
+                    else:
+                        print('USUÁRIO OU SENHA INVÁLIDOS! ')
+                case 2:
+                    nome = input('Insira seu nome: ')
+                    login = input('Insira seu login: ')
+                    senha = input('Insira sua senha: ')
+                    l.cadastraLogin(cursor, conexao, nome, login, senha)
+                    print('USUÁRIO CADASTRADO! ')
+                case _:
+                    print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 2!')
+        except ValueError:
+            print('INSIRA APENAS NÚMEROS!')
+
 
 def telaCadastroProduto(cursor, conexao):
     while True:
@@ -18,7 +51,7 @@ def telaCadastroProduto(cursor, conexao):
                 esp2 = input('Insira a especificação: ')
             data = dt.date.today().strftime("%Y/%m/%d")
             hora = dt.datetime.now().time().strftime("%H:%M")
-            s.cadastroProduto(n, q, v, invest, esp2, data, hora, cursor, conexao)
+            p.cadastroProduto(n, q, v, invest, esp2, data, hora, cursor, conexao)
             return
         except ValueError:
                 print('ERRO! INSIRA APENAS NÚMEROS')
@@ -35,7 +68,7 @@ def listarProdutos(produtos):
 def telaListagemProdutos(cursor, conexao):
      while True:
           try:
-            produtos = s.consultaProdutos(cursor)
+            produtos = p.consultaProdutos(cursor)
             if not produtos:
                 print('AINDA NÃO HÁ PRODUTOS CADASTRADOS!')
                 return
@@ -71,7 +104,7 @@ def telaListagemProdutos(cursor, conexao):
                         if estoqMax<0:
                             print('INSIRA APENAS NÚMEROS POSITIVOS')
                             break
-                    produtos = s.filtragemProdutos(n, valorMin, valorMax, estoqMin, estoqMax, cursor)
+                    produtos = f.filtragemProdutos(n, valorMin, valorMax, estoqMin, estoqMax, cursor)
                     if not produtos:
                         print('NÃO HÁ PRODUTOS COM ESTAS ESPECIFICAÇÕES')
                     else:
@@ -85,11 +118,11 @@ def telaListagemProdutos(cursor, conexao):
 def telaDeletar(cursor, conexao):
     try:
         idProd = int(input('Insira o ID do produto que deseja deletar: '))
-        produto = s.buscarProduto(idProd, cursor)
+        produto = p.buscarProduto(idProd, cursor)
         if produto is None:
                 print('ERRO: PRODUTO NÃO ENCONTRADO!')
                 return
-        s.deletarProduto(idProd, cursor)
+        p.deletarProduto(idProd, cursor)
         print(f'[{produto}] DELETADO')
         conexao.commit()
     except ValueError:
@@ -106,7 +139,7 @@ def telaHistoricoCadProdutos(cursor, conexao):
     while True:
         try:
             op = "produtos"
-            historico = s.consultaProdutos(cursor)
+            historico = p.consultaProdutos(cursor)
             if not historico:
                 print('AINDA NÃO HÁ PRODUTOS CADASTRADOS! ')
                 return
@@ -119,7 +152,7 @@ def telaHistoricoCadProdutos(cursor, conexao):
                     escolha = int(input('Qual opção escolhida? '))
                     match escolha:
                         case 1:
-                            historico = s.filtragemData(escolha, op, cursor)
+                            historico = f.filtragemData(escolha, op, cursor)
                             if not historico:
                                 print('NÃO HÁ RESULTADOS')
                                 return
@@ -127,7 +160,7 @@ def telaHistoricoCadProdutos(cursor, conexao):
                                 listarHisProdutos(historico)
                                 return
                         case 2:
-                            historico = s.filtragemData(escolha, op, cursor)
+                            historico = f.filtragemData(escolha, op, cursor)
                             if not historico:
                                 print('NÃO HÁ RESULTADOS')
                                 return
@@ -139,7 +172,7 @@ def telaHistoricoCadProdutos(cursor, conexao):
                             verificData = dt.datetime.strptime(dataInicial, "%Y/%m/%d")
                             dataUltima = input('Insira a data mais recente(NO FORMATO AAAA/MM/DD): ')
                             verificData = dt.datetime.strptime(dataUltima, "%Y/%m/%d")
-                            historico = s.filtragemData(escolha, op, cursor, dataInicial, dataUltima)
+                            historico = f.filtragemData(escolha, op, cursor, dataInicial, dataUltima)
                             if not historico:
                                 print('NÃO HÁ RESULTADOS')
                                 return
@@ -149,7 +182,7 @@ def telaHistoricoCadProdutos(cursor, conexao):
                         case _:
                             print('INSIRA APENAS NÚMEROS ENTRE 1 E 3!')
                 else:
-                    s.historicoProdutos(historico, cursor)
+                    p.historicoProdutos(historico, cursor)
                     return
         except ValueError:
             print('ERRO! AS DATAS NÃO ESTÃO NO FORMATO ESPERADO!')
@@ -168,7 +201,7 @@ def telaHistMov(cursor, conexao):
     op = "historicoMovimentacao"
     while True:
         try:
-            historico = s.consultaMov(cursor)
+            historico = m.consultaMov(cursor)
             if not historico:
                 print('AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES! ')
                 return
@@ -180,7 +213,7 @@ def telaHistMov(cursor, conexao):
                 escolha = int(input('Qual opção escolhida? '))
                 match escolha:
                     case 1:
-                        historico = s.filtragemData(escolha, op, cursor)
+                        historico = f.filtragemData(escolha, op, cursor)
                         if not historico:
                             print('NÃO HÁ RESULTADOS')
                             return
@@ -188,7 +221,7 @@ def telaHistMov(cursor, conexao):
                             listarHistMov(historico)
                             return
                     case 2:
-                        historico = s.filtragemData(escolha, op, cursor)
+                        historico = f.filtragemData(escolha, op, cursor)
                         if not historico:
                             print('NÃO HÁ RESULTADOS')
                             return
@@ -200,7 +233,7 @@ def telaHistMov(cursor, conexao):
                         verificData = dt.datetime.strptime(dataInicial, "%Y/%m/%d")
                         dataUltima = input('Insira a data mais recente(NO FORMATO AAAA/MM/DD): ')
                         verificData = dt.datetime.strptime(dataUltima, "%Y/%m/%d")
-                        historico = s.filtragemData(escolha, op, cursor, dataInicial, dataUltima)
+                        historico = f.filtragemData(escolha, op, cursor, dataInicial, dataUltima)
                         if not historico:
                             print('NÃO HÁ RESULTADOS')
                             return
@@ -257,7 +290,7 @@ def telaRegMov(cursor, conexao):
                         case 1:
                             stip = 'COMPRA'
                             idProduto = int(input('Insira o ID do produto: '))
-                            resultado = s.buscarProduto(idProduto, cursor)
+                            resultado = p.buscarProduto(idProduto, cursor)
                             if resultado is None:
                                 print('ERRO: PRODUTO NÃO ENCONTRADO!')
                                 return
@@ -272,12 +305,12 @@ def telaRegMov(cursor, conexao):
                                 print('VOCÊ NÃO PODE REALIZAR ESTÁ COMPRA! ')
                                 print('MOTIVO: SALDO INSUFICIENTE')
                                 return
-                            s.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao, invest)
+                            m.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao, invest)
                             return
                         case 2:
                             stip = 'DEVOLUÇÃO'
                             idProduto = int(input('Insira o ID do produto: '))
-                            resultado = s.buscarProduto(idProduto, cursor)
+                            resultado = p.buscarProduto(idProduto, cursor)
                             if resultado is None:
                                 print('ERRO: PRODUTO NÃO ENCONTRADO!')
                                 return
@@ -287,7 +320,7 @@ def telaRegMov(cursor, conexao):
                             invest = float(input('Qual o valor do reembolso? '))
                             data = dt.date.today().strftime("%d/%m/%Y")
                             hora = dt.datetime.now().time().strftime("%H:%M")
-                            s.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao, invest)
+                            m.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao, invest)
                             return
                         case _:
                             print('INSIRA APENAS NÚMEROS DE 1 A 2 ')
@@ -301,7 +334,7 @@ def telaRegMov(cursor, conexao):
                         case 1:
                             stip = 'VENDA'
                             idProduto = int(input('Insira o ID do produto: '))
-                            resultado = s.buscarProduto(idProduto, cursor)
+                            resultado = p.buscarProduto(idProduto, cursor)
                             if resultado is None:
                                 print('ERRO: PRODUTO NÃO ENCONTRADO!')
                                 return
@@ -316,7 +349,7 @@ def telaRegMov(cursor, conexao):
                             invest = float(input('insira o valor da venda: '))
                             data = dt.date.today().strftime("%d/%m/%Y")
                             hora = dt.datetime.now().time().strftime("%H:%M")
-                            s.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao, invest)
+                            m.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao, invest)
                             return
                         case 2:
                             stip = 'PERCA'
@@ -334,7 +367,7 @@ def telaRegMov(cursor, conexao):
                             q = int(input('Quantas unidades foram perdidas? '))
                             data = dt.date.today().strftime("%d/%m/%Y")
                             hora = dt.datetime.now().time().strftime("%H:%M")
-                            s.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao)
+                            m.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao)
                            
                         case 3:
                             stip = 'TRANSFERÊNCIA'
@@ -362,7 +395,7 @@ def telaRegMov(cursor, conexao):
                                 return
                             data = dt.date.today().strftime("%d/%m/%Y")
                             hora = dt.datetime.now().time().strftime("%H:%M")
-                            s.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao)
+                            m.registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao)
                             return
                         case _:
                             print('INSIRA SOMENTE NÚMEROS DE 1 A 3 ')
@@ -385,7 +418,7 @@ def telaRelatorio(conexao):
                         print('NÃO HÁ PRODUTOS CADASTRADOS')
                         return
                     else:
-                        s.geralRel(df, nomeArquivo)
+                        r.geralRel(df, nomeArquivo)
                         print('RELATÓRIO EXPORTADO COM SUCESSO!')
                         return
                 case 2:
@@ -397,21 +430,21 @@ def telaRelatorio(conexao):
                     rel2 = int(input('Escolha uma opção: '))
                     match rel2:
                         case 1:
-                            df = s.lerDados(rel, conexao, rel2)
+                            df = r.lerDados(rel, conexao, rel2)
                             if df.empty:
                                 print('NÃO HÁ PRODUTOS CADASTRADOS')
                                 return
                             else:
-                                s.geralRel(df, nomeArquivo)
+                                r.geralRel(df, nomeArquivo)
                                 print('RELATÓRIO EXPORTADO COM SUCESSO!')
                                 return
                         case 2:
-                            df = s.lerDados(rel, conexao, rel2)
+                            df = r.lerDados(rel, conexao, rel2)
                             if df.empty:
                                 print('NÃO HÁ PRODUTOS CADASTRADOS')
                                 return
                             else:
-                                s.geralRel(df, nomeArquivo)
+                                r.geralRel(df, nomeArquivo)
                                 print('RELATÓRIO EXPORTADO COM SUCESSO!')
                                 return
                         case 3:
@@ -420,12 +453,12 @@ def telaRelatorio(conexao):
                                 verificData = dt.datetime.strptime(dataInicial, "%Y/%m/%d")
                                 dataUltima = input('Insira a data mais recente(NO FORMATO AAAA/MM/DD): ')
                                 verificData = dt.datetime.strptime(dataUltima, "%Y/%m/%d")
-                                df = s.lerDados(rel, conexao, rel2, dataInicial, dataUltima )
+                                df = r.lerDados(rel, conexao, rel2, dataInicial, dataUltima )
                                 if df.empty:
                                     print('NÃO HÁ PRODUTOS CADASTRADOS')
                                     return
                                 else:
-                                    s.geralRel(df, nomeArquivo)
+                                    r.geralRel(df, nomeArquivo)
                                     print('RELATÓRIO EXPORTADO COM SUCESSO!')
                                     return
                             except ValueError:

@@ -3,6 +3,18 @@ def Bancos():
     conexao = sqlite3.connect("banco.db")
     cursor = conexao.cursor()
 
+    '''
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS usuario(
+                   id INTEGER PRIMARY KEY,
+                   nome TEXT NOT NULL,
+                   login TEXT NOT NULL,
+                   senha TEXT NOT NULL
+                   )
+    """)
+    '''
+
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS produtos(
                 id INTEGER PRIMARY KEY,
@@ -24,7 +36,7 @@ def Bancos():
                     quantidade INTEGER NOT NULL,
                     data TEXT NOT NULL,
                     hora TEXT NOT NULL
-                    )
+    )
     """)
 
     cursor.execute("""
