@@ -1,4 +1,3 @@
-import servicos as s
 from servicos import produtos as p
 from servicos import movimentacoes as m
 from servicos import relatorios as r
@@ -8,28 +7,59 @@ from servicos import filtro as f
 import datetime as dt
 
 def telaLogin(cursor, conexao):
+    import socket
     while True:
         try:
-            print("[1] ENTRAR")
-            print('[2] CADASTRAR-SE')
-            op = int(input('Qual opção?: '))
-            match op:
-                case 1:
-                    login = input('Insira seu login: ')
-                    senha = input('Insira sua senha')
-                    existe = l.verificaLogin(cursor, conexao, login, senha)
-                    if existe:
-                        return
-                    else:
-                        print('USUÁRIO OU SENHA INVÁLIDOS! ')
-                case 2:
-                    nome = input('Insira seu nome: ')
-                    login = input('Insira seu login: ')
-                    senha = input('Insira sua senha: ')
-                    l.cadastraLogin(cursor, conexao, nome, login, senha)
-                    print('USUÁRIO CADASTRADO! ')
-                case _:
-                    print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 2!')
+            maq = socket.gethostname()
+            resultado = l.verificaTentativas(maq, cursor, conexao)
+            if not resultado:
+                identificador = maq
+                tentativas = 4
+                bloqueadoAte = None
+            else:
+                identificador = resultado[0]
+                tentativas = resultado[1]
+                bloqueadoAte = resultado[2]
+            if bloqueadoAte is None or bloqueadoAte <= dt.datetime.now():
+                print("[1] ENTRAR")
+                print('[2] CADASTRAR-SE')
+                op = int(input('Qual opção?: '))
+                match op:
+                    case 1:
+                        login = input('Insira seu login: ')
+                        senha = input('Insira sua senha')
+                        existe = l.verificaLogin(cursor, conexao, login, senha)
+                        if existe:
+                            tentativas = 0
+                            bloqueadoAte = None
+                            logou = True
+                            l.registraTentativa(identificador, tentativas, cursor, conexao, bloqueadoAte, logou)
+                            return True
+                        else:
+                            print('USUÁRIO OU SENHA INVÁLIDOS! ')
+                            tentativas -= 1
+                            if tentativas > 0:
+                                print(f'VOCÊ POSSUI {tentativas} TENTATIVAS ')
+                                l.registraTentativa(identificador, tentativas, cursor, conexao)
+
+                            else:
+                                print(f'VCOÊ ESGOTOU SUAS TENTATIVAS, TENTE NOVAMENTE EM 5 MINUTOS! ')
+                                bloqueadoAte = dt.datetime.now() + dt.timedelta(minutes=5)
+                                l.registraTentativa(identificador, tentativas, cursor, conexao, bloqueadoAte)
+                                return False
+                    case 2:
+                        nome = input('Insira seu nome: ')
+                        login = input('Insira seu login: ')
+                        senha = input('Insira sua senha: ')
+                        l.cadastraLogin(cursor, conexao, nome, login, senha)
+                        print('USUÁRIO CADASTRADO! ')
+                    case _:
+                        print('ERRO! INSIRA APENAS NÚMEROS DE 1 A 2!')
+            else:
+                print('-='*25)            
+                print('VOCÊ ACABOU COM SUAS TENTATIVAS, TENTE NOVAMENTE MAIS TARDE')
+                print('-='*25)
+                return False  
         except ValueError:
             print('INSIRA APENAS NÚMEROS!')
 
