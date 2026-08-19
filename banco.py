@@ -9,7 +9,8 @@ def Bancos():
                    id INTEGER PRIMARY KEY,
                    nome TEXT NOT NULL,
                    login TEXT NOT NULL,
-                   senha TEXT NOT NULL
+                   senha BLOB NOT NULL,
+                   cargo TEXT NOT NULL
                    )
     """)
     
@@ -17,7 +18,7 @@ def Bancos():
     CREATE TABLE IF NOT EXISTS tentativasLogin(
                    identificador TEXT PRIMARY KEY,
                    tentativas INTEGER NOT NULL,
-                   bloqueadoAte TEXT DEFAULT NULL
+                   bloqueadoAte TIMESTAMP DEFAULT NULL
                    )
     """)
 
@@ -26,10 +27,11 @@ def Bancos():
                 id INTEGER PRIMARY KEY,
                 nome TEXT NOT NULL,
                 quantidade INTEGER NOT NULL,
-                preco REAL NOT NULL,
-                especificacao TEXT NOT NULL,
+                preco INTEGER NOT NULL,
+                especificacao TEXT DEFAULT NULL,
                 data TEXT NOT NULL,
                 hora TEXT NOT NULL
+                quemFez TEXT NOT NULL
                     )
     """)
 
@@ -37,20 +39,23 @@ def Bancos():
     CREATE TABLE IF NOT EXISTS historicoMovimentacao(
                     id INTEGER PRIMARY KEY,
                     produto TEXT NOT NULL,
+                    idProduto INTEGER NOT NULL,
                     tipo TEXT NOT NULL,
-                    stipo TEXT NOT NULL,
-                    quantidade INTEGER NOT NULL,
+                    stipo TEXT DEFAULT NULL,
+                    quantidade INTEGER DEFAULT 0,
                     data TEXT NOT NULL,
-                    hora TEXT NOT NULL
+                    hora TEXT NOT NULL,
+                    quemFez TEXT NOT NULL,
+                    valorEnvolvido INTEGER DEFAULT 0
     )
     """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS saldo(
                 id INTEGER PRIMARY KEY,
-                valor REAL NOT NULL   
-)      
-""")
+                valor INTEGER NOT NULL 
+    )      
+    """)
     cursor.execute("""
     SELECT * FROM saldo WHERE id = 1
     """)
@@ -60,6 +65,17 @@ def Bancos():
         INSERT INTO saldo (id, valor)
         VALUES (1, 0)
         """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS histSaldo(
+                id INTEGER PRIMARY KEY,
+                valor REAL NOT NULL,
+                operacao TEXT NOT NULL,
+                quemFez TEXT NOT NULL,
+                data TEXT NOT NULL,
+                hora TEXT NOT NULL
+    )
+    """)
 
     conexao.commit()
     conexao.close()

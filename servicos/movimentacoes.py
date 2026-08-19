@@ -5,13 +5,16 @@ def consultaMov(cursor):
     historico = cursor.fetchall()
     return historico
 
-def registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexao, invest=0):
+def registroMov(produto, idProduto, tip, q, cursor, conexao, nome, stip=0, invest=0):
+    import datetime as dt
+    data = dt.date.today().strftime("%d/%m/%Y")
+    hora = dt.datetime.now().time().strftime("%H:%M")
     if tip=='ENTRADA':
             if stip=='COMPRA':
                 cursor.execute("""
-                INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+                INSERT INTO historicoMovimentacao (produto, idProduto, tipo, stipo, quantidade, data, hora, quemFez, valorEnvolvido)
                 VALUES (?, ?, ?, ?, ?, ?)
-                """, (produto, tip, stip, q, data, hora))
+                """, (produto, idProduto, tip, stip, q, data, hora, nome, invest))
                 cursor.execute("""
                 UPDATE SALDO
                 SET valor = valor - ?
@@ -25,9 +28,9 @@ def registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexa
                 conexao.commit()
             if stip=='DEVOLUÇÃO':
                 cursor.execute("""
-                INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+                INSERT INTO historicoMovimentacao (produto, idProduto, tipo, stipo, quantidade, data, hora, quemFez, valorEnvolvido)
                 VALUES (?, ?, ?, ?, ?, ?)
-                """, (produto, tip, stip, q, data, hora))
+                """, (produto, idProduto, tip, stip, q, data, hora, nome, invest))
                 cursor.execute("""
                 UPDATE SALDO
                 SET valor = valor - ?
@@ -39,12 +42,12 @@ def registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexa
                 WHERE id = ?   
                 """, (q, idProduto))
                 conexao.commit()
-    else:
+    elif tip=='SAÍDA':
         if stip=='VENDA':
             cursor.execute("""
-            INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+            INSERT INTO historicoMovimentacao (produto, idProduto, tipo, stipo, quantidade, data, hora, quemFez, valorEnvolvido)
             VALUES (?, ?, ?, ?, ?, ?)
-            """, (produto, tip, stip, q, data, hora))
+            """, (produto, idProduto, tip, stip, q, data, hora, nome, invest))
             cursor.execute("""
             UPDATE SALDO
             SET valor = valor + ?
@@ -59,9 +62,9 @@ def registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexa
             return
         if stip=='PERCA':
             cursor.execute("""
-            INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+            INSERT INTO historicoMovimentacao (produto, idProduto, tipo, stipo, quantidade, data, hora, quemFez)
             VALUES (?, ?, ?, ?, ?, ?)
-            """, (produto, tip, stip, q, data, hora))
+            """, (produto, idProduto, tip, stip, q, data, hora, nome))
             cursor.execute("""
             UPDATE produtos
             SET quantidade = quantidade - ?
@@ -71,9 +74,9 @@ def registroMov(produto, idProduto, op, tip, stip, q, data, hora, cursor, conexa
             return
         if stip=='TRANSFERÊNCIA':
             cursor.execute("""
-            INSERT INTO historicoMovimentacao (produto, tipo, stipo, quantidade, data, hora)
+            INSERT INTO historicoMovimentacao (produto, idProduto, tipo, stipo, quantidade, data, hora, quemFez, valorEnvolvido)
             VALUES (?, ?, ?, ?, ?, ?)
-            """, (produto, tip, stip, q, data, hora))
+            """, (produto, idProduto, tip, stip, q, data, hora, nome, invest))
             cursor.execute("""
             UPDATE SALDO
             SET valor = valor - ?

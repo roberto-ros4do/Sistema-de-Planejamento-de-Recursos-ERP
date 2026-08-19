@@ -1,43 +1,35 @@
-def cadastroProduto(n, q, v, invest, esp2, data, hora, cursor, conexao):
+def cadastroProduto(n, q, v, invest, esp2, cursor, conexao, nome):
+    import datetime as dt
+    data = dt.date.today().strftime("%Y/%m/%d")
+    hora = dt.datetime.now().time().strftime("%H:%M")
     cursor.execute("""
-    INSERT INTO produtos (nome, quantidade, preco, especificacao, data, hora)
+    INSERT INTO produtos (nome, quantidade, preco, especificacao, data, hora, quemCriou)
     VALUES (?, ?, ?, ?, ?, ?)
-    """, (n, q, v, esp2, data, hora))
+    """, (n, q, v, esp2, data, hora, nome))
     cursor.execute("""
     UPDATE SALDO
     SET valor = valor - ?
     WHERE id = 1          
     """, (invest,))
+    cursor.execute("""
+    SELECT id FROM produtos
+    WHERE nome = ?
+    quantidade = ?
+    preco = ?
+    especificacao = ?
+    data = ?
+    hora = ?
+    quemCriou = ?
+    """, (n, q, v, esp2, data, hora, nome))
+    id = cursor.fetchone()[0]
+    tip = 'CADASTRO'
+    cursor.execute("""
+    INSERT INTO historicoMovimentacao (produto, idProduto, tipo, quantidade, data, hora, quemFez, valorEnvolvido)
+    VALUES (? ,? ,? ,? ,? , ?, ?, ?)
+    """, (n, id, tip, q, data, hora, nome, v ))
     conexao.commit()
     return
         
-def filtragemProdutos(n, valorMin, valorMax, estoqMin, estoqMax, cursor):
-    query = "SELECT * FROM produtos WHERE 1=1"
-    parametros = []
-    if n!='':
-        query += " AND LOWER(nome) LIKE LOWER(?)"
-        parametros.append(f'%{n}%')
-    if valorMin!='' and valorMax!='':
-        if valorMin > valorMax:
-            valorMin, valorMax = valorMax, valorMin
-    if estoqMin!='' and estoqMax!='':
-        if estoqMin>estoqMax:
-            estoqMin, estoqMax = estoqMax, estoqMin
-    if valorMin!='':
-        query += " AND preco >= ?"
-        parametros.append(valorMin)
-    if valorMax!='':
-        query += " AND preco <= ?"
-        parametros.append(valorMax)
-    if estoqMin!='':
-        query += " AND quantidade >= ?"
-        parametros.append(estoqMin)
-    if estoqMax!='':
-        query += " AND quantidade <= ? "
-        parametros.append(estoqMax)
-    cursor.execute(query, parametros)
-    produtos = cursor.fetchall()
-    return produtos
 
 def buscarProduto(idProd, cursor):
     cursor.execute("""
@@ -48,10 +40,23 @@ def buscarProduto(idProd, cursor):
     return consulta
     
 def deletarProduto(idProd, cursor):
+    import datetime as dt
+    data = dt.date.today().strftime("%Y/%m/%d")
+    hora = dt.datetime.now().time().strftime("%H:%M")
+    cursor.execute("""
+        SELECT nome FROM produtos
+        WHERE id = ?
+    """, (idProd,))
+    nome = cursor.fetchone()[0]
     deletado = cursor.execute("""
     DELETE FROM produtos
     WHERE id = ?
     """, (idProd,))
+    tip = 'DELETAÇÃO'
+    cursor.execute("""
+    INSERT INTO historicoMovimentacao (produto, idProduto, tipo, data, hora, quemFez)
+    VALUES (? ,? ,? ,? ,? , ?, ?, ?)
+    """, (nome, idProd, tip, data, hora, nome ))
     return deletado
 
 def consultaProdutos(cursor):

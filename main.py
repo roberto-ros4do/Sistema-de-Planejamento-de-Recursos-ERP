@@ -1,6 +1,8 @@
 import sqlite3
 from interface import terminal as i
 from banco import Bancos
+from servicos import login as l
+from servicos import saldo as s
 
 Bancos()
 conexao = sqlite3.connect("banco.db", detect_types=sqlite3.PARSE_DECLTYPES)
@@ -8,58 +10,37 @@ cursor = conexao.cursor()
 
 print('----------------SEJA BEM VINDO!-------------------')
 
-login = i.telaLogin(cursor, conexao)
+logou, cargo, nome = i.telaLogin(cursor, conexao)
+menu, telas = l.verificaCargo(cursor, conexao, cargo)
 
-if login:
+if logou: 
     while True:
-        cursor.execute("""
-        SELECT valor FROM saldo 
-        WHERE id = 1
-        """)
-        saldo = cursor.fetchone()[0]
+        saldo = s.verificarSaldo(cursor)
         print('------PLANEJAMENTO DE RECURSOS EMPRESARIAIS-------')
-        print(f'SALDO: R$ {saldo:.2f}')
-        print('------------------------------')
-        print('[1] CADASTRAR PRODUTOS')
-        print('[2] LISTAGEM DE PRODUTOS')
-        print('[3] HISTÓRICO DE CADASTRO')
-        print('[4] REGISTRAR MOVIMENTAÇÃO')
-        print('[5] HISTÓRICO DE MOVIMENTAÇÕES')
-        print('[6] EXPORTAR RELATÓRIO CSV')
-        print('[7] DELETAR PRODUTO')
-        print('[8] EDITAR SALDO')
-        print('[9] SAIR DO SISTEMA')
+        if cargo!='ESTOQUISTA':
+            print(f'SALDO: R$ {(saldo/100):.2f}')
+            print('------------------------------')
+        c = 1
+        ultimo=0
+        for item in menu:
+            print(f'[{c}] {item}')
+            ultimo= c
+            c += 1
         try:
             funcao = int(input('QUAL FUNÇÃO DESEJA REALIZAR? '))
-            match funcao:
-                case 1:
-                    i.telaCadastroProduto(cursor, conexao)
-                case 2:
-                    i.telaListagemProdutos(cursor, conexao)
-                case 3:
-                    i.telaHistoricoCadProdutos(cursor, conexao)
-                case 4:
-                    i.telaRegMov(cursor, conexao)
-                case 5:
-                    i.telaHistMov(cursor, conexao)
-                case 6:
-                    i.telaRel(conexao)
-                case 7:
-                    i.telaDeletar(cursor, conexao)
-                case 8:
-                i.telaEditarSaldo(cursor, conexao)
-                case 9:
-                    print('SAINDO...')
-                    break
-                case _:
-                    print('ERRO: INSIRA UM VALOR ENTRE 1 E 7 ')
+            if funcao<=ultimo-1 and funcao>0:
+                telas[funcao-1](cursor, conexao, nome)
+            elif funcao==ultimo:
+                print('SAINDO...')
+                break
+            else:
+                print(f'ERRO! INSIRA UM VALOR ENTRE 1 A {c} ')
         except ValueError:
-            print('ERRO: INSIRA UM VALOR ENTRE 1 A 7')
+            print(f'ERRO: INSIRA UM VALOR ENTRE 1 A {c}]')
         continuar = input('AINDA DESEJA UTILIZAR O SISTEMA[S/N]? ')
         if continuar.lower() not in ('s', 'sim'):
             break
 else:
-    print('SAINDO...')  
-
+    print('SAINDO...')
 conexao.close()
 
