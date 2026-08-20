@@ -56,7 +56,7 @@ def telaCadastrarUsuario(cursor, conexao):
         nome = input('Insira nome: ')
         login = input('Insira login: ')
         while True:
-            existe = l.verificaLoginRepetido(login)
+            existe = l.verificaLoginRepetido(login, cursor)
             if existe:
                 print('Este login já existe! Insira um diferente')
             else:

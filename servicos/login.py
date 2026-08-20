@@ -18,7 +18,7 @@ def verificaLogin(cursor, conexao, login, senha):
 
 def verificaLoginRepetido(login, cursor):
     cursor.execute("""
-    SELECT login FROM usuarios
+    SELECT login FROM usuario
     WHERE login = ?
     """, (login,))
     logins = cursor.fetchall()
@@ -73,32 +73,3 @@ def registraTentativa(identificador, tentativas, cursor, conexao, login=0, bloqu
             WHERE identificador = ?
             """, (tentativas, bloqueadoAte, identificador))
         conexao.commit()
-
-def verificaCargo(cursor, conexao, cargo):
-    from interface import terminal as i
-    menu = []
-    if cargo=='ADMINISTRADOR':
-        menu=['CADASTRAR PRODUTOS', 'LISTAGEM DE PRODUTOS', 
-    'REGISTRAR MOVIMENTAÇÕES', 'HISTÓRICO DE MOVIMENTAÇÕES', 'EXPORTAR RELATÓRIO CSV', 'DELETAR PRODUTO', 'EDITAR SALDO', 
-    'HISTÓRICO DE TRANSAÇÕES', 'CADASTRAR USUÁRIO', 'SAIR DO SISTEMA']
-        telas = [ i.telaCadastroProduto,  i.telaListagemProdutos, i.telaRegMov,  i.telaHistMov, i.telaRelatorio,
-                i.telaDeletar, i.telaEditarSaldo, i.telaHistSaldo, i.telaCadastrarUsuario]
-    elif cargo=='GERENTE':
-        menu=['CADASTRAR PRODUTOS', 'LISTAGEM DE PRODUTOS', 'REGISTRAR MOVIMENTAÇÕES',
-                'HISTÓRICO DE MOVIMENTAÇÕES', 'EXPORTAR RELATÓRIO CSV', 'SAIR DO SISTEMA']
-        telas = [ i.telaCadastroProduto,  i.telaListagemProdutos,
-                i.telaRegMov,  i.telaHistMov, i.telaRelatorio]
-    elif cargo=='ESTOQUISTA':
-        menu = ['CADASTRAR PRODUTOS', 'LISTAGEM DE PRODUTOS', 
-        'REGISTRAR MOVIMENTAÇÕES', 'HISTÓRICO DE MOVIMENTAÇÕES', 'EXPORTAR RELATÓRIO CSV', 'SAIR DO SISTEMA']
-        telas = [ i.telaCadastroProduto,  i.telaListagemProdutos,
-                i.telaRegMov,  i.telaHistMov, i.telaRelatorio]
-    elif cargo=='FINANCEIRO':
-        menu=['LISTAGEM DE PRODUTOS', 'HISTÓRICO DE MOVIMENTAÇÕES', 'EXPORTAR RELATÓRIO CSV',  'EDITAR SALDO', 'SAIR DO SISTEMA']
-        telas = [i.telaListagemProdutos, i.telaHistMov, 
-                i.telaRelatorio, i.telaEditarSaldo]
-    elif cargo=='CONSULTA':
-        menu=['LISTAGEM DE PRODUTOS', 'HISTÓRICO DE MOVIMENTAÇÕES', 'HISTÓRICO DE TRANSAÇÕES', 'EXPORTAR RELATÓRIO CSV',  'SAIR DO SISTEMA']
-        telas = [ i.telaListagemProdutos,
-                i.telaHistMov, i.telaHistSaldo, i.telaRelatorio]
-    return menu, telas

@@ -30,7 +30,7 @@ def Bancos():
                 preco INTEGER NOT NULL,
                 especificacao TEXT DEFAULT NULL,
                 data TEXT NOT NULL,
-                hora TEXT NOT NULL
+                hora TEXT NOT NULL,
                 quemFez TEXT NOT NULL
                     )
     """)

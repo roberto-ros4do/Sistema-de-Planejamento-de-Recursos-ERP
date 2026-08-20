@@ -3,6 +3,7 @@ from interface import terminal as i
 from banco import Bancos
 from servicos import login as l
 from servicos import saldo as s
+from servicos import permissoes as p
 
 Bancos()
 conexao = sqlite3.connect("banco.db", detect_types=sqlite3.PARSE_DECLTYPES)
@@ -11,7 +12,10 @@ cursor = conexao.cursor()
 print('----------------SEJA BEM VINDO!-------------------')
 
 logou, cargo, nome = i.telaLogin(cursor, conexao)
-menu, telas = l.verificaCargo(cursor, conexao, cargo)
+menu, telas = p.verificaCargo(cargo)
+
+print(menu)
+print(telas)
 
 if logou: 
     while True:
