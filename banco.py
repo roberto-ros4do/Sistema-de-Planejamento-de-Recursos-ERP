@@ -28,7 +28,6 @@ def Bancos():
                 nome TEXT NOT NULL,
                 quantidade INTEGER NOT NULL,
                 preco INTEGER NOT NULL,
-                especificacao TEXT DEFAULT NULL,
                 data TEXT NOT NULL,
                 hora TEXT NOT NULL,
                 quemFez TEXT NOT NULL
@@ -40,8 +39,7 @@ def Bancos():
                     id INTEGER PRIMARY KEY,
                     produto TEXT NOT NULL,
                     idProduto INTEGER NOT NULL,
-                    tipo TEXT NOT NULL,
-                    stipo TEXT DEFAULT NULL,
+                    tipo TEXT DEFAULT NULL,
                     quantidade INTEGER DEFAULT 0,
                     data TEXT NOT NULL,
                     hora TEXT NOT NULL,
@@ -53,7 +51,7 @@ def Bancos():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS saldo(
                 id INTEGER PRIMARY KEY,
-                valor INTEGER NOT NULL 
+                valor INTEGER DEFAULT 0 
     )      
     """)
     cursor.execute("""
@@ -69,7 +67,7 @@ def Bancos():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS histSaldo(
                 id INTEGER PRIMARY KEY,
-                valor REAL NOT NULL,
+                valor INTEGER NOT NULL,
                 operacao TEXT NOT NULL,
                 quemFez TEXT NOT NULL,
                 data TEXT NOT NULL,

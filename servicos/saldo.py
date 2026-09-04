@@ -4,36 +4,42 @@ def verificarSaldo(cursor):
     where id = 1
     """)
     saldo = cursor.fetchone()[0]
-    if saldo is None:
-        cursor.execute("""
-        INSERT INTO saldo (id, valor)
-        VALUES (1, 0)
-    """)
     return saldo
 
 def editarSaldo(op, qtd, saldo, cursor, conexao, nome):
     import datetime as dt
-    if op==1:
-        cursor.execute("""
-        UPDATE SALDO
-        SET valor = valor + ?
-        WHERE id = 1           
-        """, (qtd,))
-        data = dt.date.today().strftime("%Y/%m/%d")
-        hora = dt.datetime.now().time().strftime("%H:%M")
-        conexao.commit()
-        cursor.execute("""
-        INSERT  INTO histSaldo(valor, operacao, quemFez, data, hora)
-        """, (qtd, op, nome, data))
-        return
-    else:
-        cursor.execute("""
-        UPDATE SALDO
-            SET valor = valor - ?
-        WHERE id = 1   
-        """, (qtd,))
-        conexao.commit()
-        return
+    data = dt.date.today().strftime("%Y/%m/%d")
+    hora = dt.datetime.now().time().strftime("%H:%M")
+    try:
+        if op==1:
+            op = 'ENTRADA'
+            cursor.execute("""
+            UPDATE SALDO
+            SET valor = valor + ?
+            WHERE id = 1           
+            """, (qtd,))
+            cursor.execute("""
+            INSERT  INTO histSaldo(valor, operacao, quemFez, data, hora)
+            VALUES (?, ?, ?, ?, ?)
+            """, (qtd, op, nome, data, hora))
+            conexao.commit()
+            return
+        else:
+            op = 'RETIRADA'
+            cursor.execute("""
+            UPDATE SALDO
+                SET valor = valor - ?
+            WHERE id = 1   
+            """, (qtd,))
+            cursor.execute("""
+            INSERT  INTO histSaldo(valor, operacao, quemFez, data, hora)
+            VALUES (?, ?, ?, ?, ?)
+            """, (qtd, op, nome, data, hora))
+            conexao.commit()
+            return
+    except Exception:
+        conexao.rollback()
+        raise
 
 def comsultaHistSaldo(cursor):
     cursor.execute("""

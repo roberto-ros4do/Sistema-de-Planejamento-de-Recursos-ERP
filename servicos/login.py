@@ -1,6 +1,6 @@
 import bcrypt
 
-def verificaLogin(cursor, conexao, login, senha):
+def verificaLogin(cursor, login, senha):
     cursor.execute("""
     SELECT login, senha, nome FROM usuario
     WHERE login = ? 
@@ -21,24 +21,27 @@ def verificaLoginRepetido(login, cursor):
     SELECT login FROM usuario
     WHERE login = ?
     """, (login,))
-    logins = cursor.fetchall()
+    logins = cursor.fetchone()
     if logins is not None:
-        return False
-    else:
         return True
+    else:
+        return False
 
     
 def cadastraLogin(cursor, conexao, nome, login, senha, cargo):
     senhaBytes = senha.encode("utf-8")
     hashSenha = bcrypt.hashpw(senhaBytes, bcrypt.gensalt())
-    cursor.execute("""
-    INSERT INTO usuario (nome, login, senha, cargo)
-    VALUES(?, ?, ?, ?)
-    """, (nome, login, hashSenha, cargo))
-    conexao.commit()
+    try:
+        cursor.execute("""
+        INSERT INTO usuario (nome, login, senha, cargo)
+        VALUES(?, ?, ?, ?)
+        """, (nome, login, hashSenha, cargo))
+        conexao.commit()
+    except Exception:
+        conexao.rollback()
+        raise
 
-def verificaTentativas(maq, cursor, conexao):
-    import datetime as dt
+def verificaTentativas(maq, cursor):
     cursor.execute("""
     SELECT identificador, tentativas, bloqueadoAte FROM tentativasLogin
     WHERE identificador = ?
@@ -48,28 +51,33 @@ def verificaTentativas(maq, cursor, conexao):
 
 
 def registraTentativa(identificador, tentativas, cursor, conexao, login=0, bloqueadoAte=None,logou=False):
-    if logou:
-        cursor.execute(""" 
+    try:
+        if logou:
+            cursor.execute(""" 
             DELETE FROM tentativasLogin
             WHERE identificador = ?
-        """, (identificador,))
-        cursor.execute("""
-            SELECT cargo FROM usuario
-            WHERE login = ?
-        """, (login,))
-        cargo = cursor.fetchone()[0] #Para não retornar o resultado em uma tupla
-        return cargo
-    else:
-        if tentativas==3:
+            """, (identificador,))
             cursor.execute("""
-            INSERT INTO tentativasLogin(identificador, tentativas)
-            VALUES (?, ?)
-            """, (identificador, tentativas))
+                SELECT cargo FROM usuario
+                WHERE login = ?
+            """, (login,))
+            cargo = cursor.fetchone()[0] #Para não retornar o resultado em uma tupla
+            conexao.commit()
+            return cargo
         else:
-            cursor.execute("""
-            UPDATE tentativasLogin
-            SET tentativas = ?,
-            bloqueadoAte = ?
-            WHERE identificador = ?
-            """, (tentativas, bloqueadoAte, identificador))
-        conexao.commit()
+            if tentativas==3:
+                cursor.execute("""
+                INSERT INTO tentativasLogin(identificador, tentativas)
+                VALUES (?, ?)
+                """, (identificador, tentativas))
+            else:
+                cursor.execute("""
+                UPDATE tentativasLogin
+                SET tentativas = ?,
+                bloqueadoAte = ?
+                WHERE identificador = ?
+                """, (tentativas, bloqueadoAte, identificador))
+            conexao.commit()
+    except Exception:
+        conexao.rollback()
+        raise

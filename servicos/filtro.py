@@ -1,67 +1,44 @@
-def filtragemData(escolha):
-    import datetime as dt
-    from calendar import monthrange
-    if escolha==1:
-        hoje = dt.date.today()
-        dataInicial = hoje - dt.timedelta(days=7)
-        dataInicial = dataInicial.strftime("%Y/%m/%d")
-        dataUltima = hoje
-        dataUltima = dataUltima.strftime("%Y/%m/%d")
-        return dataInicial, dataUltima
-    elif escolha==2:
-        hoje = dt.date.today().strftime("%Y/%m/%d")
-        mes = int(hoje[5:7]) - 1
-        dia = int(hoje[8:])
-        ano = int(hoje[0:4])
-        ultimoDia = monthrange(ano, mes)[1]
-        if mes == 0:
-            ano -= 1
-            mes = 12
-        if dia > ultimoDia:
-            dia = ultimoDia
-        dataInicial = dt.date(ano, mes, dia).strftime("%Y/%m/%d")
-        dataUltima = hoje
-        dataUltima = dataUltima.strftime("%Y/%m/%d")
-        return dataInicial, dataUltima 
-
-def filtragemProdutos(n, quemCad, id, valorMin, valorMax, estoqMin, estoqMax, dataInicial, dataUltima, cursor, f=0):
+def filtragemProdutos(valorMin, valorMax, estoqMin, estoqMax, cursor, dataInicial=0, dataUltima=0, quemCad=0, f=0, n=0, id=0):
     parametros = []
-    if id!='':
+    if id!='' and id!=0:
             cursor.execute("""
-                SELECT * FROM produtos 
+                SELECT id, nome, preco, quantidade, data, quemFez FROM produtos 
                 WHERE id = ?
             """, (id,))
             produtos = cursor.fetchall()
             return produtos
-    elif dataUltima!='' and dataInicial!='':
-            query = " SELECT * FROM produtos WHERE data BETWEEN ? AND ?"
+    elif dataUltima!='' and dataUltima!=0 and dataInicial!='' and dataInicial!=0:
+        if f=='REL':
+            query = " SELECT id, nome, preco, quantidade, data, quemFez FROM produtos WHERE data BETWEEN ? AND ?"
             parametros.append(dataInicial)
             parametros.append(dataUltima)
+        else:
+            query = "SELECT id, nome, preco, quantidade, data, quemFez FROM produtos WHERE 1=1"
     else:
-        query = "SELECT * FROM produtos WHERE 1=1"
-    if n!='':
+        query = "SELECT id, nome, preco, quantidade, data, quemFez FROM produtos WHERE 1=1"
+    if n!='' and n!=0:
         query += " AND LOWER(nome) LIKE LOWER(?)"
         parametros.append(f'%{n}%')
-    if quemCad != '':
+    if quemCad != '' and quemCad!=0:
         query += " AND LOWER(quemFez) LIKE LOWER(?)"
         parametros.append(quemCad)
     if valorMin!='' and valorMax!='':
         if valorMin > valorMax:
             valorMin, valorMax = valorMax, valorMin
-    if estoqMin!='' and estoqMax!='':
-        if estoqMin>estoqMax:
-            estoqMin, estoqMax = estoqMax, estoqMin
     if valorMin!='':
         query += " AND preco >= ?"
         parametros.append(valorMin)
     if valorMax!='':
-        query += " AND preco <= ?"
+        query += " AND  preco  <= ?"
         parametros.append(valorMax)
+    if estoqMin!='' and estoqMax!='':
+            if estoqMin > estoqMax:
+                estoqMin, estoqMax = estoqMax, estoqMin
     if estoqMin!='':
         query += " AND quantidade >= ?"
         parametros.append(estoqMin)
     if estoqMax!='':
-        query += " AND quantidade <= ? "
+        query += " AND quantidade <= ?"
         parametros.append(estoqMax)
     if f=='REL':
         return query, parametros
@@ -69,24 +46,35 @@ def filtragemProdutos(n, quemCad, id, valorMin, valorMax, estoqMin, estoqMax, da
     produtos = cursor.fetchall()
     return produtos
 
-def filtragemMov(n, quemCad, id, unid, dataInicial, dataUltima, cursor, mov, f=0):
+def filtragemMov(n, quemCad, idProd, unidMin, unidMax, valorMin, valorMax, dataInicial, dataUltima, cursor, mov):
     parametros = []
-    if id!='':
-            cursor.execute("""
-                SELECT * FROM historicoMovimentacao 
-                WHERE id = ?
-            """, (id,))
-            historico = cursor.fetchall()
-            return historico
-    elif dataUltima!='' and dataInicial!='':
-            query = " SELECT * FROM historicoMovimentacao WHERE data BETWEEN ? AND ?"
+    if dataUltima!='' and dataInicial!='':
+            query = " SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM historicoMovimentacao WHERE data BETWEEN ? AND ?"
             parametros.append(dataInicial)
             parametros.append(dataUltima)
     else:
-        query = "SELECT * FROM historicoMovimentacao WHERE 1=1"
-    if unid != '':
-            query += "AND unid = ? "
-            parametros.append(unid)
+        query = "SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM historicoMovimentacao WHERE 1=1"
+    if idProd!="":
+        query += "AND idProduto = ? "
+        parametros.append(idProd)
+    if unidMin!='' and unidMax!='':
+        if unidMin > unidMax:
+            unidMin, unidMax = unidMax, unidMin
+    if unidMin!='':
+        query += " AND quantidade >= ?"
+        parametros.append(unidMin)
+    if unidMax!='':
+        query += " AND quantidade <= ?"
+        parametros.append(unidMax)
+    if valorMin!='' and valorMax!='':
+        if valorMin > valorMax:
+            valorMin, valorMax = valorMax, valorMin
+    if valorMin!='':
+        query += " AND valorEnvolvido >= ?"
+        parametros.append(valorMin)
+    if valorMax!='':
+        query += " AND  valorEnvolvido  <= ?"
+        parametros.append(valorMax)
     if n!='':
         query += " AND LOWER(produto) LIKE LOWER(?)"
         parametros.append(f'%{n}%')
@@ -94,34 +82,104 @@ def filtragemMov(n, quemCad, id, unid, dataInicial, dataUltima, cursor, mov, f=0
         query += " AND LOWER(quemFez) LIKE LOWER(?)"  
         parametros.append(quemCad) 
     if mov!='':
-        query += " AND stipo = ?"
+        query += " AND tipo = ?"
         parametros.append(mov)
-    if f=='REL':
-        return query, parametros
     cursor.execute(query, parametros)
     historico = cursor.fetchall() 
     return historico
 
-def filtragemSaldo(quemCad, valorMin, valorMax, dataInicial, dataUltima, cursor):
+def filtragemMovRel(quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, dataUltima, cursor, mov):
     parametros = []
     if dataUltima!='' and dataInicial!='':
-        query = " SELECT * FROM produtos WHERE data BETWEEN ? AND ?"
-        parametros.append(dataInicial)
-        parametros.append(dataUltima)
+            query = " SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM historicoMovimentacao WHERE data BETWEEN ? AND ?"
+            parametros.append(dataInicial)
+            parametros.append(dataUltima)
     else:
-        query = "SELECT * FROM produtos WHERE 1=1"
-    if quemCad != '':
-        query += " AND LOWER(quemFez) LIKE LOWER(?)"   
-        parametros.append(quemCad)
+        query = "SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM historicoMovimentacao WHERE 1=1"
+    if unidMin!='':
+        query += " AND quantidade >= ?"
+        parametros.append(unidMin)
+    if unidMax!='':
+        query += " AND quantidade <= ?"
+        parametros.append(unidMax)
     if valorMin!='' and valorMax!='':
         if valorMin > valorMax:
             valorMin, valorMax = valorMax, valorMin
     if valorMin!='':
-        query += " AND preco >= ?"
+        query += " AND valorEnvolvido >= ?"
         parametros.append(valorMin)
     if valorMax!='':
-        query += " AND preco <= ?"
+        query += " AND  valorEnvolvido  <= ?"
         parametros.append(valorMax)
+    if quemCad != '':
+        query += " AND LOWER(quemFez) LIKE LOWER(?)"  
+        parametros.append(quemCad) 
+    if mov!='':
+        query += " AND tipo = ?"
+        parametros.append(mov)
+    return query, parametros
+
+def filtragemMov(n, quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, dataUltima, cursor, mov, f=0):
+    parametros = []
+    if dataUltima!='' and dataInicial!='':
+            query = " SELECT * FROM historicoMovimentacao WHERE data BETWEEN ? AND ?"
+            parametros.append(dataInicial)
+            parametros.append(dataUltima)
+    else:
+        query = "SELECT * FROM historicoMovimentacao WHERE 1=1"
+    if unidMin!='':
+        query += " AND quantidade >= ?"
+        parametros.append(unidMin)
+    if unidMax!='':
+        query += " AND quantidade <= ?"
+        parametros.append(unidMax)
+    if valorMin!='' and valorMax!='':
+        if valorMin > valorMax:
+            valorMin, valorMax = valorMax, valorMin
+    if valorMin!='':
+        query += " AND valorEnvolvido >= ?"
+        parametros.append(valorMin)
+    if valorMax!='':
+        query += " AND  valorEnvolvido  <= ?"
+        parametros.append(valorMax)
+    if n!='':
+        query += " AND LOWER(produto) LIKE LOWER(?)"
+        parametros.append(f'%{n}%')
+    if quemCad != '':
+        query += " AND LOWER(quemFez) LIKE LOWER(?)"  
+        parametros.append(quemCad) 
+    if mov!='':
+        query += " AND tipo = ?"
+        parametros.append(mov)
     cursor.execute(query, parametros)
-    historico = cursor.fetchall()
+    historico = cursor.fetchall() 
+    return historico
+
+def filtragemSaldo(quemCad, tip, valorMin, valorMax, dataInicial, dataUltima, cursor, f=0):
+    parametros = []
+    if dataUltima!='' and dataInicial!='':
+        query = " SELECT valor, operacao, quemFez, data, hora FROM histSaldo WHERE data BETWEEN ? AND ?"
+        parametros.append(dataInicial)
+        parametros.append(dataUltima)
+    else:
+        query = "SELECT valor, operacao, quemFez, data, hora FROM histSaldo WHERE 1=1"
+    if quemCad != '':
+        query += " AND LOWER(quemFez) LIKE LOWER(?)"   
+        parametros.append(quemCad)
+    if tip!='':
+        query+= " AND operacao = ?"
+        parametros.append(tip)
+    if valorMin!='' and valorMax!='':
+        if valorMin > valorMax:
+            valorMin, valorMax = valorMax, valorMin
+    if valorMin!='':
+        query += " AND valor >= ?"
+        parametros.append(valorMin)
+    if valorMax!='':
+        query += " AND valor <= ?"
+        parametros.append(valorMax)
+    if f=='REL':
+            return query, parametros
+    cursor.execute(query, parametros)
+    historico = cursor.fetchall() 
     return historico
