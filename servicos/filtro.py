@@ -48,15 +48,19 @@ def filtragemProdutos(valorMin, valorMax, estoqMin, estoqMax, cursor, dataInicia
 
 def filtragemMov(n, quemCad, idProd, unidMin, unidMax, valorMin, valorMax, dataInicial, dataUltima, cursor, mov):
     parametros = []
-    if dataUltima!='' and dataInicial!='':
+    if idProd!="" and idProd!=0:
+        cursor.execute("""
+            SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM historicoMovimentacao 
+            WHERE id = ?
+        """, (idProd,))
+        historico = cursor.fetchall()
+        return historico
+    elif dataUltima!='' and dataInicial!='':
             query = " SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM historicoMovimentacao WHERE data BETWEEN ? AND ?"
             parametros.append(dataInicial)
             parametros.append(dataUltima)
     else:
         query = "SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM historicoMovimentacao WHERE 1=1"
-    if idProd!="":
-        query += "AND idProduto = ? "
-        parametros.append(idProd)
     if unidMin!='' and unidMax!='':
         if unidMin > unidMax:
             unidMin, unidMax = unidMax, unidMin
@@ -118,42 +122,6 @@ def filtragemMovRel(quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, 
         query += " AND tipo = ?"
         parametros.append(mov)
     return query, parametros
-
-def filtragemMov(n, quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, dataUltima, cursor, mov, f=0):
-    parametros = []
-    if dataUltima!='' and dataInicial!='':
-            query = " SELECT * FROM historicoMovimentacao WHERE data BETWEEN ? AND ?"
-            parametros.append(dataInicial)
-            parametros.append(dataUltima)
-    else:
-        query = "SELECT * FROM historicoMovimentacao WHERE 1=1"
-    if unidMin!='':
-        query += " AND quantidade >= ?"
-        parametros.append(unidMin)
-    if unidMax!='':
-        query += " AND quantidade <= ?"
-        parametros.append(unidMax)
-    if valorMin!='' and valorMax!='':
-        if valorMin > valorMax:
-            valorMin, valorMax = valorMax, valorMin
-    if valorMin!='':
-        query += " AND valorEnvolvido >= ?"
-        parametros.append(valorMin)
-    if valorMax!='':
-        query += " AND  valorEnvolvido  <= ?"
-        parametros.append(valorMax)
-    if n!='':
-        query += " AND LOWER(produto) LIKE LOWER(?)"
-        parametros.append(f'%{n}%')
-    if quemCad != '':
-        query += " AND LOWER(quemFez) LIKE LOWER(?)"  
-        parametros.append(quemCad) 
-    if mov!='':
-        query += " AND tipo = ?"
-        parametros.append(mov)
-    cursor.execute(query, parametros)
-    historico = cursor.fetchall() 
-    return historico
 
 def filtragemSaldo(quemCad, tip, valorMin, valorMax, dataInicial, dataUltima, cursor, f=0):
     parametros = []

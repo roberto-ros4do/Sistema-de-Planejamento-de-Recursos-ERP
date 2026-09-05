@@ -3,16 +3,14 @@ from interface import terminal as i
 from banco import Bancos
 from servicos import saldo as s
 
-Bancos()
-conexao = sqlite3.connect("banco.db", detect_types=sqlite3.PARSE_DECLTYPES)
-cursor = conexao.cursor()
-
-print('----------------SEJA BEM VINDO!-------------------')
-
-logou, cargo, nome = i.telaLogin(cursor, conexao)
-menu, telas = i.verificaCargo(cargo)
-
 try:
+    Bancos()
+    conexao = sqlite3.connect("banco.db", detect_types=sqlite3.PARSE_DECLTYPES)
+    cursor = conexao.cursor()
+    
+    print('----------------SEJA BEM VINDO!-------------------')
+    logou, cargo, nome = i.telaLogin(cursor, conexao)
+    menu, telas = i.verificaCargo(cargo)
     if logou: 
         while True:
             saldo = s.verificarSaldo(cursor)

@@ -7,7 +7,7 @@ from servicos import filtro as f
 import datetime as dt
 
 def verificaCargo(cargo):
-    from permissoes import podeExecutar
+    from servicos import permissoes as pe
     TELAS = {
     'CADASTRAR_PRODUTOS': {
         'nome': 'CADASTRAR PRODUTOS',
@@ -63,7 +63,7 @@ def verificaCargo(cargo):
     menu = []
     telas = []
     for acao in TELAS:
-        if podeExecutar(cargo, acao):
+        if pe.podeExecutar(cargo, acao):
             menu.append(TELAS[acao]['nome'])
             if TELAS[acao]['tela'] is not None:
                 telas.append(TELAS[acao]['tela'])
@@ -74,7 +74,7 @@ def telaLogin(cursor, conexao):
     while True:
         try:
             maq = socket.gethostname()
-            resultado = l.verificaTentativas(maq, cursor)
+            resultado = l.verificaTentativas(maq, cursor, conexao)
             if resultado is None:
                 identificador = maq
                 tentativas = 4
@@ -162,7 +162,7 @@ def telaCadastrarUsuario(cursor, conexao, nome=None):
 def telaCadastroProduto(cursor, conexao, nome=None):
     while True:
         n = input('Insira o nome do produto: ')
-        if n is False:
+        if n == '':
             print('NÃO DEIXE ESTE CAMPO VAZIO!')
             continue
         try:

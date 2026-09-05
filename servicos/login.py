@@ -1,4 +1,5 @@
 import bcrypt
+import datetime as dt
 
 def verificaLogin(cursor, login, senha):
     cursor.execute("""
@@ -41,12 +42,19 @@ def cadastraLogin(cursor, conexao, nome, login, senha, cargo):
         conexao.rollback()
         raise
 
-def verificaTentativas(maq, cursor):
+def verificaTentativas(maq, cursor, conexao):
     cursor.execute("""
     SELECT identificador, tentativas, bloqueadoAte FROM tentativasLogin
     WHERE identificador = ?
     """, (maq,))
     resultado = cursor.fetchone()
+    if resultado is not None and resultado[2] is not None and dt.datetime.now()<= resultado[2]:
+        cursor.execute("""
+        DELETE FROM tentativasLogin
+        WHERE identificador = ?
+        """, (maq,))
+        conexao.commit()
+        return None
     return resultado
 
 

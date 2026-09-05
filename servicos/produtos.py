@@ -8,13 +8,15 @@ def cadastroProduto(n, q, v, invest, cursor, conexao, nome):
         VALUES (?, ?, ?, ?, ?, ?)
         """, (n, q, v, data, hora, nome))
         idProd = cursor.lastrowid
-        if invest=='':
-            invest=0
-        cursor.execute("""
-        UPDATE saldo
-        SET valor = valor - ?
-        WHERE id = 1  
-        """, (invest,))
+        if invest !=0 or invest>0:
+            cursor.execute("""
+            INSERT INTO histSaldo (valor, operacao, quemFez, data, hora)
+            """, (invest, 'SAÍDA', nome, data, hora))
+            cursor.execute("""
+            UPDATE saldo
+            SET valor = valor - ?
+            WHERE id = 1  
+            """, (invest,))
         tip = 'CADASTRO'
         cursor.execute("""
         INSERT INTO historicoMovimentacao (produto, idProduto, tipo, quantidade, data, hora, quemFez, valorEnvolvido)
@@ -54,11 +56,12 @@ def deletarProduto(idProd, cursor, conexao, quemFez):
         INSERT INTO historicoMovimentacao (produto, idProduto, tipo, data, hora, quemFez)
         VALUES (? ,? ,? ,? ,? , ?)
         """, (nome, idProd, tip, data, hora, quemFez ))
+        conexao.commit()
+        return
     except Exception:
-        cursor.connection.rollback()
+        conexao.rollback()
         raise
-    conexao.commit()
-    return
+
 
 def consultaProdutos(cursor):
     cursor.execute("""
