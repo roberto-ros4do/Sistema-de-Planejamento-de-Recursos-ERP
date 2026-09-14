@@ -3,11 +3,11 @@ from interface import terminal as i
 from banco import Bancos
 from servicos import saldo as s
 
+Bancos()
+conexao = sqlite3.connect("banco.db", detect_types=sqlite3.PARSE_DECLTYPES)
+cursor = conexao.cursor()
+
 try:
-    Bancos()
-    conexao = sqlite3.connect("banco.db", detect_types=sqlite3.PARSE_DECLTYPES)
-    cursor = conexao.cursor()
-    
     print('----------------SEJA BEM VINDO!-------------------')
     logou, cargo, nome = i.telaLogin(cursor, conexao)
     menu, telas = i.verificaCargo(cargo)
@@ -27,14 +27,14 @@ try:
             try:
                 funcao = int(input('QUAL FUNÇÃO DESEJA REALIZAR? '))
                 if funcao<=ultimo-1 and funcao>0:
-                    telas[funcao-1](cursor, conexao, nome)
+                    telas[funcao-1](cursor, conexao, cargo, nome)
                 elif funcao==ultimo:
                     print('SAINDO...')
                     break
                 else:
-                    print(f'ERRO! INSIRA UM VALOR ENTRE 1 A {c} ')
+                    print(f'ERRO! INSIRA UM VALOR ENTRE 1 A {ultimo} ')
             except ValueError:
-                print(f'ERRO: INSIRA UM VALOR ENTRE 1 A {c}]')
+                print(f'ERRO: INSIRA UM VALOR ENTRE 1 A {ultimo}]')
             continuar = input('AINDA DESEJA UTILIZAR O SISTEMA[S/N]? ')
             if continuar.lower() not in ('s', 'sim'):
                 break
