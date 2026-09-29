@@ -175,7 +175,7 @@ def filtragemMov(n, quemCad, idProd, unidMin, unidMax, valorMin, valorMax, dataI
         parametros.append(f'%{n}%')
     if quemCad != '':
         query += " AND LOWER(quemFez) LIKE LOWER(?)"  
-        parametros.append(quemCad) 
+        parametros.append(f'%{quemCad}%') 
     if mov!='':
         if mov not in ('COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA'):
             raise ValueError('CAMPO OPERAÇÃO ACEITA APENAS OPERAÇÕES VÁLIDAS!')
@@ -255,7 +255,7 @@ def filtragemMovRel(quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, 
         parametros.append(valorMax)
     if quemCad != '':
         query += " AND LOWER(quemFez) LIKE LOWER(?)"  
-        parametros.append(quemCad) 
+        parametros.append(f'%{quemCad}%') 
     if mov!='':
         if mov not in ('COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA'):
             raise ValueError('CAMPO OPERAÇÃO ACEITA APENAS OPERAÇÕES VÁLIDAS!')
@@ -281,7 +281,7 @@ def filtragemSaldo(quemCad, tip, valorMin, valorMax, dataInicial, dataUltima, cu
         query = "SELECT valor, operacao, quemFez, data, hora FROM histSaldo WHERE 1=1"
     if quemCad != '':
         query += " AND LOWER(quemFez) LIKE LOWER(?)"   
-        parametros.append(quemCad)
+        parametros.append(f'%{quemCad}%')
     if tip!='':
         query+= " AND operacao = ?"
         parametros.append(tip)

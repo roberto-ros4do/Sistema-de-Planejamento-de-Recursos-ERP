@@ -53,6 +53,8 @@ def editarSaldo(op, qtd, saldo, cursor, conexao, nome, cargo):
             """, (qtd, op, nome, data, hora))
             conexao.commit()
             return
+        else:
+            raise ValueError('CAMPO OPERAÇÃO ACEITA APENAS VALORES RETIRADA E ENTRADA!')
     except Exception:
         conexao.rollback()
         raise
