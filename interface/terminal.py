@@ -191,6 +191,8 @@ def telaHistMov(cursor, conexao, cargo=None, nome=None): #OK
             print('[3] TRANSFERÊNCIA')
             print('[4] DEVOLUÇÃO')
             print('[5] PERCA')
+            print('[6] CADASTRO')
+            print('[7] DELETAÇÃO')
             mov = input('Qual opção escolhida?(ENTER para pular)')
             match mov:
                 case "1":
@@ -203,6 +205,10 @@ def telaHistMov(cursor, conexao, cargo=None, nome=None): #OK
                     mov = "DEVOLUÇÃO"
                 case "5":
                     mov = "PERCA"
+                case "6":
+                    mov = "CADASTRO"
+                case "7":
+                    mov = "DELETAÇÃO"
                 case _:
                     mov = ''
             dataInicial = input('Insira a data mais antiga(NO FORMATO AAAA/MM/DD): ')
@@ -335,6 +341,8 @@ def telaRelatorio(cursor, conexao, cargo=None, nome=None):
                         print('[3] TRANSFERÊNCIA')
                         print('[4] DEVOLUÇÃO')
                         print('[5] PERCA')
+                        print('[6] CADASTRO')
+                        print('[7] DELETAÇÃO')
                         mov = input('Qual a movimentação realizada? ')
                         match mov:
                             case "1":
@@ -347,6 +355,10 @@ def telaRelatorio(cursor, conexao, cargo=None, nome=None):
                                 mov = "DEVOLUÇÃO" 
                             case "5":
                                 mov = "PERCA"
+                            case "6":
+                                mov = "CADASTRO"
+                            case "7":
+                                mov = "DELETAÇÃO"
                             case _:
                                 mov = ''
                         dataInicial = input('Insira a data mais antiga(NO FORMATO AAAA/MM/DD): ')

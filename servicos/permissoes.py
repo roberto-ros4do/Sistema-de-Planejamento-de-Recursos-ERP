@@ -40,6 +40,7 @@ PERMISSOES = {
 
     'HISTORICO_DE_TRANSACOES': [
         'ADMINISTRADOR',
+        'FINANCEIRO',
         'CONSULTA'],
 
     'CADASTRAR_USUARIO': [

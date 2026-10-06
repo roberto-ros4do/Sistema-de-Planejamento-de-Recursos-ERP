@@ -2,7 +2,7 @@ import sqlite3
 import pytest
 import pandas as pd
 
-from servicos.relatorios import lerDados, gerarRel
+from servicos.relatorios import lerDados, gerarRel, gerarCsv, formatarRelatorio
 
 
 @pytest.fixture
@@ -185,9 +185,9 @@ def testGerarRelatorioCSV(tmp_path):
 
     assert len(arquivos) == 1
 
-    conteudo = arquivos[0].read_text(encoding='utf-8')
-    assert 'id,nome,quantidade' in conteudo
-    assert '1,Coca Cola,20' in conteudo
+    conteudo = arquivos[0].read_text(encoding='utf-8-sig')
+    assert 'id;nome;quantidade' in conteudo
+    assert '1;Coca Cola;20' in conteudo
 
 
 def testGerarRelatorioSemPermissao(tmp_path):
@@ -320,6 +320,129 @@ def testGerarRelatorioAPartirDeLerDados(banco, tmp_path):
     arquivos = list(tmp_path.glob('relatorio_saldo_*.csv'))
     assert len(arquivos) == 1
 
-    conteudo = arquivos[0].read_text(encoding='utf-8')
-    assert 'valor,operacao,quemFez,data,hora' in conteudo
-    assert '1000,SAÍDA,ROBERTO' in conteudo
+    conteudo = arquivos[0].read_text(encoding='utf-8-sig')
+    assert 'valor;operacao;quemFez;data;hora' in conteudo
+    assert '10,00;SAÍDA;ROBERTO;2026-10-01;10:00' in conteudo
+
+# ---------------------------------------------------------------------------
+# Formatação do CSV (valores em reais, datas AAAA-MM-DD, padrão Excel BR)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "coluna, centavos, reais",
+    [
+        ('preco', 699, 6.99),
+        ('valorEnvolvido', 1500, 15.0),
+        ('valor', 1, 0.01),
+        ('valor', 0, 0.0),
+    ]
+)
+def testFormatarRelatorioConverteCentavos(coluna, centavos, reais):
+    df = pd.DataFrame({coluna: [centavos]})
+
+    formatado = formatarRelatorio(df)
+
+    assert formatado.iloc[0][coluna] == pytest.approx(reais)
+
+
+def testFormatarRelatorioConverteData():
+    df = pd.DataFrame({'data': ['2026/10/01', '2026/12/31']})
+
+    formatado = formatarRelatorio(df)
+
+    assert list(formatado['data']) == ['2026-10-01', '2026-12-31']
+
+
+def testFormatarRelatorioNaoAlteraOutrasColunas():
+    df = pd.DataFrame({
+        'id': [1],
+        'nome': ['Coca Cola'],
+        'quantidade': [20],
+        'quemFez': ['ROBERTO']
+    })
+
+    formatado = formatarRelatorio(df)
+
+    assert formatado.iloc[0]['id'] == 1
+    assert formatado.iloc[0]['nome'] == 'Coca Cola'
+    assert formatado.iloc[0]['quantidade'] == 20
+    assert formatado.iloc[0]['quemFez'] == 'ROBERTO'
+
+
+def testFormatarRelatorioNaoAlteraOriginal():
+    df = pd.DataFrame({'preco': [600], 'data': ['2026/10/01']})
+
+    formatarRelatorio(df)
+
+    assert df.iloc[0]['preco'] == 600
+    assert df.iloc[0]['data'] == '2026/10/01'
+
+
+@pytest.mark.parametrize(
+    "rel, cabecalho, linha",
+    [
+        ('1', 'id;nome;preco;quantidade;data;quemFez', '1;Coca Cola;6,00;20;2026-10-01;ROBERTO'),
+        ('2', 'produto;idProduto;tipo;quantidade;data;quemFez;valorEnvolvido', 'Pepsi;2;VENDA;3;2026-10-02;JOAO;15,00'),
+        ('3', 'valor;operacao;quemFez;data;hora', '15,00;ENTRADA;JOAO;2026-10-02;11:00'),
+        ('4', 'id;nome;quantidade', '2;Pepsi;10'),
+    ]
+    #os 4 relatórios saem no mesmo padrão
+)
+def testGerarCsvTodosRelatorios(banco, rel, cabecalho, linha):
+    conexao, cursor = banco
+
+    df = lerDados(rel, conexao)
+    conteudo = gerarCsv(df, 'ADMINISTRADOR')
+    linhas = conteudo.splitlines()
+
+    assert linhas[0] == cabecalho
+    assert linha in linhas
+
+
+def testGerarCsvComFiltro(banco):
+    conexao, cursor = banco
+
+    query = "SELECT valor, operacao FROM histSaldo WHERE operacao = ?"
+    df = lerDados('3', conexao, query, ('SAÍDA',))
+
+    conteudo = gerarCsv(df, 'CONSULTA')
+
+    assert conteudo.splitlines() == ['valor;operacao', '10,00;SAÍDA']
+
+
+def testGerarCsvSemPermissao(banco):
+    conexao, cursor = banco
+
+    df = lerDados('1', conexao)
+
+    with pytest.raises(
+        PermissionError,
+        match='USUÁRIO NÃO POSSUI PERMISSÃO PARA REALIZAR ESTA AÇÃO'
+    ):
+        gerarCsv(df, 'CARGO INVÁLIDO')
+
+
+def testGerarRelatorioArquivoComMarcadorUtf8(banco, tmp_path):
+    conexao, cursor = banco
+
+    df = lerDados('3', conexao)
+    nome_arquivo = str(tmp_path / 'relatorio_extrato')
+
+    gerarRel(df, nome_arquivo, 'ADMINISTRADOR')
+
+    arquivo = list(tmp_path.glob('relatorio_extrato_*.csv'))[0]
+    bytes_arquivo = arquivo.read_bytes()
+
+    #o marcador UTF-8 (BOM) faz o Excel reconhecer os acentos
+    assert bytes_arquivo.startswith(b'\xef\xbb\xbf')
+    assert 'SAÍDA'.encode('utf-8') in bytes_arquivo
+
+
+def testLerDadosContinuaEmCentavos(banco):
+    conexao, cursor = banco
+
+    #a formatação só acontece no CSV; lerDados devolve os dados do banco
+    df = lerDados('2', conexao)
+
+    assert df.iloc[0]['valorEnvolvido'] == 1000
+    assert df.iloc[0]['data'] == '2026/10/01'

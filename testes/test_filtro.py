@@ -725,7 +725,7 @@ def testFiltragemMovDataEOperacao(banco):
 
 @pytest.mark.parametrize(
     "tipo",
-    ['COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA']
+    ['COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA', 'CADASTRO', 'DELETAÇÃO']
 )
 def testFiltragemMovOperacoesValidas(banco, tipo):
     conexao, cursor = banco
@@ -864,7 +864,7 @@ def testFiltragemMovRelTrocaFaixaDeValores(banco):
 
 @pytest.mark.parametrize(
     "tipo",
-    ['COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA']
+    ['COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA', 'CADASTRO', 'DELETAÇÃO']
 )
 def testFiltragemMovRelOperacoesValidas(banco, tipo):
     conexao, cursor = banco
@@ -1149,4 +1149,70 @@ def testFiltragemSaldoOperacaoInvalidaRelatorio(banco):
         filtragemSaldo(
             '', 'INVALIDA', '', '',
             '', '', cursor, f='REL'
+        )
+
+# ---------------------------------------------------------------------------
+# Filtro pelos tipos CADASTRO e DELETAÇÃO
+# ---------------------------------------------------------------------------
+
+def inserirCadastroEDelecao(cursor, conexao):
+    cursor.executemany("""
+        INSERT INTO historicoMovimentacao
+        (id, produto, idProduto, tipo, quantidade, data, hora, quemFez, valorEnvolvido)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, [
+        (4, 'Fanta', 4, 'CADASTRO', 15, '2026/10/04', '09:00', 'ROBERTO', 2000),
+        (5, 'Fanta', 4, 'DELETAÇÃO', 0, '2026/10/05', '09:30', 'ROBERTO', 0),
+    ])
+    conexao.commit()
+
+
+@pytest.mark.parametrize(
+    "tipo, quantidade",
+    [
+        ('CADASTRO', 15),
+        ('DELETAÇÃO', 0),
+    ]
+)
+def testFiltragemMovPorCadastroEDelecao(banco, tipo, quantidade):
+    conexao, cursor = banco
+    inserirCadastroEDelecao(cursor, conexao)
+
+    historico = filtragemMov(
+        '', '', '', '', '', '', '',
+        '', '', cursor, tipo
+    )
+
+    assert len(historico) == 1
+    assert historico[0][0] == 'Fanta'
+    assert historico[0][2] == tipo
+    assert historico[0][3] == quantidade
+
+
+@pytest.mark.parametrize("tipo", ['CADASTRO', 'DELETAÇÃO'])
+def testFiltragemMovRelCadastroEDelecaoExecutavel(banco, tipo):
+    conexao, cursor = banco
+    inserirCadastroEDelecao(cursor, conexao)
+
+    query, parametros = filtragemMovRel(
+        '', '', '', '', '',
+        '', '',
+        cursor, tipo
+    )
+
+    cursor.execute(query, parametros)
+    historico = cursor.fetchall()
+
+    assert len(historico) == 1
+    assert historico[0][2] == tipo
+
+
+@pytest.mark.parametrize("tipo", ['cadastro', 'DELETACAO', 'EXCLUSÃO'])
+def testFiltragemMovTipoParecidoInvalido(banco, tipo):
+    conexao, cursor = banco
+
+    with pytest.raises(ValueError, match='CAMPO OPERAÇÃO ACEITA APENAS OPERAÇÕES VÁLIDAS!'):
+        filtragemMov(
+            '', '', '', '', '', '', '',
+            '', '', cursor, tipo
         )

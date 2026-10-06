@@ -185,7 +185,7 @@ def filtragemMov(n, quemCad, idProd, unidMin, unidMax, valorMin, valorMax, dataI
         query += " AND LOWER(quemFez) LIKE LOWER(?)"  
         parametros.append(f'%{quemCad}%') 
     if mov!='':
-        if mov not in ('COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA'):
+        if mov not in ('COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA', 'CADASTRO', 'DELETAÇÃO'):
             raise ValueError('CAMPO OPERAÇÃO ACEITA APENAS OPERAÇÕES VÁLIDAS!')
         query += " AND tipo = ?"
         parametros.append(mov)
@@ -265,7 +265,7 @@ def filtragemMovRel(quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, 
         query += " AND LOWER(quemFez) LIKE LOWER(?)"  
         parametros.append(f'%{quemCad}%') 
     if mov!='':
-        if mov not in ('COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA'):
+        if mov not in ('COMPRA', 'VENDA', 'TRANSFERÊNCIA', 'DEVOLUÇÃO', 'PERCA', 'CADASTRO', 'DELETAÇÃO'):
             raise ValueError('CAMPO OPERAÇÃO ACEITA APENAS OPERAÇÕES VÁLIDAS!')
         query += " AND tipo = ?"
         parametros.append(mov)
