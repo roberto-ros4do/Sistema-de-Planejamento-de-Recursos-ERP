@@ -1,4 +1,5 @@
 def filtragemProdutos(valorMin, valorMax, estoqMin, estoqMax, cursor, dataInicial=0, dataUltima=0, quemCad=0, f=0, n=0, id=0, estoq=False): #OK
+    import datetime as dt
     parametros = []
     if estoq:
         colunas = "id, nome, quantidade"
@@ -18,6 +19,11 @@ def filtragemProdutos(valorMin, valorMax, estoqMin, estoqMax, cursor, dataInicia
         produtos = cursor.fetchall()
         return produtos
     elif dataUltima!='' and dataUltima!=0 and dataInicial!='' and dataInicial!=0:
+        try:
+            verificData = dt.datetime.strptime(dataInicial, "%Y/%m/%d")
+            verificData = dt.datetime.strptime(dataUltima, "%Y/%m/%d")
+        except ValueError:
+            raise ValueError('AS DATAS NÃO ESTÃO NO FORMATO ESPERADO!')
         query = f" SELECT {colunas} FROM produtos WHERE data BETWEEN ? AND ?"
         parametros.append(dataInicial)
         parametros.append(dataUltima)
@@ -55,7 +61,7 @@ def filtragemProdutos(valorMin, valorMax, estoqMin, estoqMax, cursor, dataInicia
             raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
         if valorMax<=0:
             raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
-        query += " AND  preco  <= ?"
+        query += " AND preco <= ?"
         parametros.append(valorMax)
     if estoqMin!='' and estoqMax!='':
         try:
@@ -98,6 +104,8 @@ def filtragemMov(n, quemCad, idProd, unidMin, unidMax, valorMin, valorMax, dataI
         try:
             idProd = int(idProd)
         except ValueError:
+            raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS')
+        if idProd<=0:
             raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS')
         cursor.execute("""
             SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM historicoMovimentacao 
@@ -155,9 +163,9 @@ def filtragemMov(n, quemCad, idProd, unidMin, unidMax, valorMin, valorMax, dataI
             if valorMax=='':
                 valorMin = round(float(valorMin)*100)
         except ValueError:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES REAIS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS VALORES REAIS E MAIORES QUE 0')
         if valorMin<=0:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
         query += " AND valorEnvolvido >= ?"
         parametros.append(valorMin)
     if valorMax!='':
@@ -165,10 +173,10 @@ def filtragemMov(n, quemCad, idProd, unidMin, unidMax, valorMin, valorMax, dataI
             if valorMin=='':
                 valorMax = round(float(valorMax)*100)
         except ValueError:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
         if valorMax<=0:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
-        query += " AND  valorEnvolvido  <= ?"
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
+        query += " AND valorEnvolvido <= ?"
         parametros.append(valorMax)
     if n!='':
         query += " AND LOWER(produto) LIKE LOWER(?)"
@@ -238,9 +246,9 @@ def filtragemMovRel(quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, 
             if valorMax=='':
                 valorMin = round(float(valorMin)*100)
         except ValueError:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES REAIS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS VALORES REAIS E MAIORES QUE 0')
         if valorMin<=0:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
         query += " AND valorEnvolvido >= ?"
         parametros.append(valorMin)
     if valorMax!='':
@@ -248,10 +256,10 @@ def filtragemMovRel(quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, 
             if valorMin=='':
                 valorMax = round(float(valorMax)*100)
         except ValueError:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
         if valorMax<=0:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
-        query += " AND  valorEnvolvido  <= ?"
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
+        query += " AND valorEnvolvido <= ?"
         parametros.append(valorMax)
     if quemCad != '':
         query += " AND LOWER(quemFez) LIKE LOWER(?)"  
@@ -283,6 +291,8 @@ def filtragemSaldo(quemCad, tip, valorMin, valorMax, dataInicial, dataUltima, cu
         query += " AND LOWER(quemFez) LIKE LOWER(?)"   
         parametros.append(f'%{quemCad}%')
     if tip!='':
+        if tip not in ('ENTRADA', 'SAÍDA', 'RETIRADA'):
+            raise ValueError('CAMPO OPERAÇÃO ACEITA APENAS OPERAÇÕES VÁLIDAS!')
         query+= " AND operacao = ?"
         parametros.append(tip)
     if valorMin!='' and valorMax!='':
@@ -298,9 +308,9 @@ def filtragemSaldo(quemCad, tip, valorMin, valorMax, dataInicial, dataUltima, cu
             if valorMax=='':
                 valorMin = round(float(valorMin)*100)
         except ValueError:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES REAIS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS VALORES REAIS E MAIORES QUE 0')
         if valorMin<=0:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
         query += " AND valor >= ?"
         parametros.append(valorMin)
     if valorMax!='':
@@ -308,9 +318,9 @@ def filtragemSaldo(quemCad, tip, valorMin, valorMax, dataInicial, dataUltima, cu
             if valorMin=='':
                 valorMax = round(float(valorMax)*100)
         except ValueError:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
         if valorMax<=0:
-            raise ValueError('CAMPO UNIDADES ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+            raise ValueError('CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS')
         query += " AND valor <= ?"
         parametros.append(valorMax)
     if f=='REL':

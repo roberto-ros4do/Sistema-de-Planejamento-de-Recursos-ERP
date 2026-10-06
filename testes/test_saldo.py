@@ -149,3 +149,166 @@ def testOperacaoInvalida(banco):
                 'Roberto',
                 'ADMINISTRADOR'
             )
+
+
+# ---------------------------------------------------------------------------
+# Casos complementares
+# ---------------------------------------------------------------------------
+
+def testConsultaHistSaldoVazio(banco):
+    conexao, cursor = banco
+
+    with pytest.raises(ValueError, match='AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES!'):
+        consultaHistSaldo(cursor)
+
+def testEntradaValorNegativo(banco):
+    conexao, cursor = banco
+    with pytest.raises(ValueError, match='CAMPO VALOR ACEITA APENAS NÚMEROS REAIS POSITIVOS'):
+        editarSaldo(
+            'ENTRADA',
+            -200,
+            100000,
+            cursor,
+            conexao,
+            'Roberto',
+            'ADMINISTRADOR'
+        )
+
+def testEntradaValorInvalido(banco):
+    conexao, cursor = banco
+    with pytest.raises(ValueError, match='CAMPO VALOR ACEITA APENAS VALORES REAIS'):
+        editarSaldo(
+            'ENTRADA',
+            "VALOR INVÁLIDO",
+            100000,
+            cursor,
+            conexao,
+            'Roberto',
+            'ADMINISTRADOR'
+        )
+
+@pytest.mark.parametrize(
+    "op, valor, saldoFinal, valorHistorico",
+    [
+        ('ENTRADA', '10.55', 101055, 1055),
+        ('RETIRADA', '10.55', 98945, 1055),
+        ('ENTRADA', '0.01', 100001, 1),
+    ]
+)
+def testEditarSaldoValorDecimal(banco, op, valor, saldoFinal, valorHistorico):
+    conexao, cursor = banco
+
+    editarSaldo(
+        op,
+        valor,
+        100000,
+        cursor,
+        conexao,
+        'Roberto',
+        'ADMINISTRADOR'
+    )
+
+    saldo = verificarSaldo(cursor)
+    historico = consultaHistSaldo(cursor)
+    assert saldo == saldoFinal
+    assert historico[0][0] == valorHistorico
+    assert historico[0][1] == op
+
+def testRetirarValorIgualAoSaldo(banco):
+    conexao, cursor = banco
+
+    editarSaldo(
+        'RETIRADA',
+        1000,
+        100000,
+        cursor,
+        conexao,
+        'Roberto',
+        'ADMINISTRADOR'
+    )
+
+    saldo = verificarSaldo(cursor)
+    assert saldo == 0
+
+@pytest.mark.parametrize(
+    "op, valor",
+    [
+        ('RETIRADA', 1200),
+        ('RETIRADA', -1),
+        ('RETIRADA', 'INVÁLIDO'),
+        ('ENTRADA', -1),
+        ('ENTRADA', 'INVÁLIDO'),
+        ('OPERAÇÃO INVÁLIDA', 10),
+    ]
+)
+def testEditarSaldoComErroNaoAlteraBanco(banco, op, valor):
+    conexao, cursor = banco
+
+    with pytest.raises(ValueError):
+        editarSaldo(
+            op,
+            valor,
+            100000,
+            cursor,
+            conexao,
+            'Roberto',
+            'ADMINISTRADOR'
+        )
+
+    saldo = verificarSaldo(cursor)
+    cursor.execute("SELECT COUNT(*) FROM histSaldo")
+    trans = cursor.fetchone()[0]
+    assert saldo == 100000
+    assert trans == 0
+
+def testEditarSaldoVariasOperacoes(banco):
+    conexao, cursor = banco
+
+    editarSaldo('ENTRADA', 500, verificarSaldo(cursor), cursor, conexao, 'Roberto', 'ADMINISTRADOR')
+    editarSaldo('RETIRADA', 200, verificarSaldo(cursor), cursor, conexao, 'Maria', 'FINANCEIRO')
+
+    saldo = verificarSaldo(cursor)
+    historico = consultaHistSaldo(cursor)
+    assert saldo == 130000
+    assert len(historico) == 2
+    assert historico[0][:3] == (50000, 'ENTRADA', 'Roberto')
+    assert historico[1][:3] == (20000, 'RETIRADA', 'Maria')
+
+@pytest.mark.parametrize(
+    "cargo",
+    ['ADMINISTRADOR', 'FINANCEIRO']
+)
+def testEditarSaldoCargosPermitidos(banco, cargo):
+    conexao, cursor = banco
+
+    editarSaldo(
+        'ENTRADA',
+        100,
+        100000,
+        cursor,
+        conexao,
+        'Roberto',
+        cargo
+    )
+
+    assert verificarSaldo(cursor) == 110000
+
+@pytest.mark.parametrize(
+    "cargo",
+    ['GERENTE', 'ESTOQUISTA', 'CONSULTA', '']
+)
+def testEditarSaldoCargosSemPermissao(banco, cargo):
+    conexao, cursor = banco
+
+    with pytest.raises(PermissionError, match='USUÁRIO NÃO POSSUI PERMISSÃO PARA REALIZAR ESTA AÇÃO'):
+        editarSaldo(
+            'ENTRADA',
+            100,
+            100000,
+            cursor,
+            conexao,
+            'Roberto',
+            cargo
+        )
+
+    assert verificarSaldo(cursor) == 100000

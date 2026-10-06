@@ -22,9 +22,9 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
             try:
                 idProduto = int(idProduto)
             except ValueError:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             if idProduto<=0:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
                 raise ValueError('PRODUTO NÃO ENCONTRADO')
@@ -33,7 +33,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 q = int(q)
             except ValueError:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
-            if q<0:
+            if q<=0:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
             try:
                 invest = round(float(invest)*100)
@@ -71,9 +71,9 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
             try:
                 idProduto = int(idProduto)
             except ValueError:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             if idProduto<=0:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
                 raise ValueError('PRODUTO NÃO ENCONTRADO')
@@ -82,7 +82,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 q = int(q)
             except ValueError:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
-            if q<0:
+            if q<=0:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
             try:
                 invest = round(float(invest)*100)
@@ -119,9 +119,9 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
             try:
                 idProduto = int(idProduto)
             except ValueError:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             if idProduto<=0:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
                 raise ValueError('PRODUTO NÃO ENCONTRADO')
@@ -131,7 +131,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 q = int(q)
             except ValueError:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
-            if q<0:
+            if q<=0:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
             try:
                 invest = round(float(invest)*100)
@@ -166,19 +166,22 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
             try:
                 idProduto = int(idProduto)
             except ValueError:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             if idProduto<=0:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
                 raise ValueError('PRODUTO NÃO ENCONTRADO')
             produto = resultado[0]
+            unidades = resultado[1]
             try:
                 q = int(q)
             except ValueError:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
-            if q<0:
+            if q<=0:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
+            if q>unidades:
+                raise ValueError('ESTOQUE INSUFICIENTE')
             cursor.execute("""
             INSERT INTO historicoMovimentacao (produto, idProduto, tipo, quantidade, data, hora, quemFez)
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -195,9 +198,9 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
             try:
                 idProduto = int(idProduto)
             except ValueError:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             if idProduto<=0:
-                raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+                raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
                 raise ValueError('PRODUTO NÃO ENCONTRADO')
@@ -207,7 +210,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 q = int(q)
             except ValueError:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
-            if q<0:
+            if q<=0:
                 raise ValueError('CAMPO QUANTIDADE ACEITA APENAS VALORES INTEIROS E POSITIVOS')
             try:
                 invest = round(float(invest)*100)
@@ -215,11 +218,11 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
             if invest<0:
                 raise ValueError('CAMPO VALOR ENVOLVIDO ACEITA APENAS VALORES INTEIROS E POSITIVOS!')
+            if q>unidades:
+                raise ValueError('ESTOQUE INSUFICIENTE')
             saldo = s.verificarSaldo(cursor)
             if invest>saldo:
                 raise ValueError('SALDO INSUFICIENTE')
-            if q>unidades:
-                raise ValueError('ESTOQUE INSUFICIENTE')
             cursor.execute("""
             INSERT INTO historicoMovimentacao (produto, idProduto, tipo, quantidade, data, hora, quemFez, valorEnvolvido)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
