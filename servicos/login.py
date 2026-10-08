@@ -1,10 +1,9 @@
 import bcrypt
 import datetime as dt
 from servicos import permissoes as pe
+from servicos import erros as er
 
-def verificaLogin(cursor, login, senha, conexao): #OK
-    import socket
-    maq = socket.gethostname()
+def verificaLogin(cursor, login, senha, conexao, maq): #OK
     resultado = verificaTentativas(maq, cursor, conexao)
     if resultado is None:
         identificador = maq
@@ -41,17 +40,17 @@ def verificaLogin(cursor, login, senha, conexao): #OK
             tentativas -= 1
             if tentativas > 0:
                 registraTentativa(identificador, tentativas, cursor, conexao)
-                raise ValueError(f'USUÁRIO OU SENHA INVÁLIDOS! VOCÊ POSSUI {tentativas} TENTATIVAS RESTANTES')
+                raise er.CredenciaisInvalidasError(f'USUÁRIO OU SENHA INVÁLIDOS! VOCÊ POSSUI {tentativas} TENTATIVAS RESTANTES')
             else:
                 bloqueadoAte = dt.datetime.now() + dt.timedelta(minutes=5)
                 registraTentativa(identificador, tentativas, cursor, conexao, bloqueadoAte=bloqueadoAte)
                 logou = False
                 cargo = None
                 nome = None
-                raise ValueError('VOCÊ ESGOTOU SUAS TENTATIVAS, TENTE NOVAMENTE EM 5 MINUTOS!')
+                raise er.BloqueioError('VOCÊ ESGOTOU SUAS TENTATIVAS, TENTE NOVAMENTE EM 5 MINUTOS!')
         return nome, logou, cargo
     else:
-        raise  ValueError('VOCÊ ACABOU COM SUAS TENTATIVAS! TENTE NOVAMENTE MAIS TARDE!')
+        raise  er.BloqueioError('VOCÊ ACABOU COM SUAS TENTATIVAS! TENTE NOVAMENTE MAIS TARDE!')
 
 def verificaLoginRepetido(login, cursor):
     cursor.execute("""
@@ -71,7 +70,7 @@ def cadastraLogin(cursor, conexao, nome, login, senha, cargo, cargoUsuarioCriado
     senhaBytes = senha.encode("utf-8")
     hashSenha = bcrypt.hashpw(senhaBytes, bcrypt.gensalt())
     if verificaLoginRepetido(login, cursor):
-        raise ValueError('LOGIN JÁ EXISTE NO SISTEMA!')
+        raise er.ConflitoError('LOGIN JÁ EXISTE NO SISTEMA!')
     if len(senha) <= 5:
         raise ValueError('INSIRA UMA SENHA MAIOR QUE 5 CARACTERES!')
     if cargoUsuarioCriado not in ('ADMINISTRADOR', 'GERENTE', 'ESTOQUISTA', 'FINANCEIRO', 'CONSULTA'):

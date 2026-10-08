@@ -1,4 +1,5 @@
 from servicos import permissoes as pe
+from servicos import erros as er
 
 def cadastroProduto(n, q, v, invest, cursor, conexao, nome, cargo): #OK
     import datetime as dt
@@ -83,7 +84,7 @@ def deletarProduto(idProd, cursor, conexao, quemFez, cargo):
             raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS')
         produto = buscarProduto(idProd, cursor)
         if produto is None:
-            raise ValueError('PRODUTO NÃO ENCONTRADO')
+            raise er.NaoEncontradoError('PRODUTO NÃO ENCONTRADO')
         cursor.execute("""
             SELECT nome FROM produtos
             WHERE id = ?
@@ -110,6 +111,4 @@ def consultaProdutos(cursor):
     SELECT id, nome, preco, quantidade, data, quemFez FROM  produtos                  
     """)                  
     consulta = cursor.fetchall()
-    if not consulta:
-        raise ValueError('AINDA NÃO HÁ PRODUTOS CADASTRADOS!')
     return consulta

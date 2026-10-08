@@ -10,6 +10,7 @@ from servicos.login import (
     verificaTentativas,
     registraTentativa
 )
+from servicos.erros import ConflitoError, CredenciaisInvalidasError, BloqueioError
 
 MAQUINA = 'MAQUINA_TESTE'
 
@@ -21,7 +22,7 @@ pytestmark = pytest.mark.filterwarnings(
 
 
 @pytest.fixture
-def banco(monkeypatch):
+def banco():
     #detect_types faz o sqlite devolver bloqueadoAte como datetime (e não texto),
     #necessário porque o serviço compara bloqueadoAte com dt.datetime.now()
     conexao = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
@@ -54,9 +55,6 @@ def banco(monkeypatch):
 
     conexao.commit()
 
-    #fixa o nome da máquina para que o controle de tentativas seja previsível
-    monkeypatch.setattr('socket.gethostname', lambda: MAQUINA)
-
     yield conexao, cursor
 
     conexao.close()
@@ -73,7 +71,7 @@ def buscarTentativa(cursor, identificador=MAQUINA):
 def errarLogin(cursor, conexao, vezes):
     for _ in range(vezes):
         with pytest.raises(ValueError):
-            verificaLogin(cursor, 'roberto', 'senhaErrada', conexao)
+            verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, MAQUINA)
 
 
 # ---------------------------------------------------------------------------
@@ -237,7 +235,7 @@ def testCadastraLoginPermiteLogar(banco):
         'ADMINISTRADOR', 'ESTOQUISTA'
     )
 
-    nome, logou, cargo = verificaLogin(cursor, 'maria', 'senha456', conexao)
+    nome, logou, cargo = verificaLogin(cursor, 'maria', 'senha456', conexao, MAQUINA)
 
     assert nome == 'Maria'
     assert logou is True
@@ -394,7 +392,7 @@ def testRegistraTentativaLogouLoginInexistente(banco):
 def testVerificaLoginValido(banco):
     conexao, cursor = banco
 
-    nome, logou, cargo = verificaLogin(cursor, 'roberto', 'senha123', conexao)
+    nome, logou, cargo = verificaLogin(cursor, 'roberto', 'senha123', conexao, MAQUINA)
 
     assert nome == 'Roberto'
     assert logou is True
@@ -421,7 +419,7 @@ def testVerificaLoginInvalido(banco, login, senha):
         ValueError,
         match='USUÁRIO OU SENHA INVÁLIDOS! VOCÊ POSSUI 3 TENTATIVAS RESTANTES'
     ):
-        verificaLogin(cursor, login, senha, conexao)
+        verificaLogin(cursor, login, senha, conexao, MAQUINA)
 
     assert buscarTentativa(cursor) == (MAQUINA, 3, None)
 
@@ -443,7 +441,7 @@ def testVerificaLoginContagemDeTentativas(banco, erros, restantes):
         ValueError,
         match=f'USUÁRIO OU SENHA INVÁLIDOS! VOCÊ POSSUI {restantes} TENTATIVAS RESTANTES'
     ):
-        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao)
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, MAQUINA)
 
     assert buscarTentativa(cursor) == (MAQUINA, restantes, None)
 
@@ -458,7 +456,7 @@ def testVerificaLoginEsgotaTentativas(banco):
         ValueError,
         match='VOCÊ ESGOTOU SUAS TENTATIVAS, TENTE NOVAMENTE EM 5 MINUTOS!'
     ):
-        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao)
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, MAQUINA)
     depois = dt.datetime.now()
 
     tentativa = buscarTentativa(cursor)
@@ -476,7 +474,7 @@ def testVerificaLoginBloqueadoMesmoComSenhaCorreta(banco):
         ValueError,
         match='VOCÊ ACABOU COM SUAS TENTATIVAS! TENTE NOVAMENTE MAIS TARDE!'
     ):
-        verificaLogin(cursor, 'roberto', 'senha123', conexao)
+        verificaLogin(cursor, 'roberto', 'senha123', conexao, MAQUINA)
 
 
 def testVerificaLoginBloqueadoNaoAlteraRegistro(banco):
@@ -489,7 +487,7 @@ def testVerificaLoginBloqueadoNaoAlteraRegistro(banco):
         ValueError,
         match='VOCÊ ACABOU COM SUAS TENTATIVAS! TENTE NOVAMENTE MAIS TARDE!'
     ):
-        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao)
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, MAQUINA)
 
     assert buscarTentativa(cursor) == registroAntes
 
@@ -507,7 +505,7 @@ def testVerificaLoginAposBloqueioExpirado(banco):
     """, (dt.datetime.now() - dt.timedelta(seconds=1), MAQUINA))
     conexao.commit()
 
-    nome, logou, cargo = verificaLogin(cursor, 'roberto', 'senha123', conexao)
+    nome, logou, cargo = verificaLogin(cursor, 'roberto', 'senha123', conexao, MAQUINA)
 
     assert nome == 'Roberto'
     assert logou is True
@@ -531,7 +529,7 @@ def testVerificaLoginErroAposBloqueioExpiradoReiniciaContagem(banco):
         ValueError,
         match='USUÁRIO OU SENHA INVÁLIDOS! VOCÊ POSSUI 3 TENTATIVAS RESTANTES'
     ):
-        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao)
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, MAQUINA)
 
     assert buscarTentativa(cursor) == (MAQUINA, 3, None)
 
@@ -542,7 +540,7 @@ def testVerificaLoginSucessoZeraTentativas(banco):
     errarLogin(cursor, conexao, 2)
     assert buscarTentativa(cursor) == (MAQUINA, 2, None)
 
-    verificaLogin(cursor, 'roberto', 'senha123', conexao)
+    verificaLogin(cursor, 'roberto', 'senha123', conexao, MAQUINA)
 
     assert buscarTentativa(cursor) is None
 
@@ -551,18 +549,16 @@ def testVerificaLoginSucessoZeraTentativas(banco):
         ValueError,
         match='USUÁRIO OU SENHA INVÁLIDOS! VOCÊ POSSUI 3 TENTATIVAS RESTANTES'
     ):
-        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao)
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, MAQUINA)
 
 
-def testVerificaLoginBloqueioPorMaquina(banco, monkeypatch):
+def testVerificaLoginBloqueioPorMaquina(banco):
     conexao, cursor = banco
 
     errarLogin(cursor, conexao, 4)
 
     #outra máquina não é afetada pelo bloqueio
-    monkeypatch.setattr('socket.gethostname', lambda: 'OUTRA_MAQUINA')
-
-    nome, logou, cargo = verificaLogin(cursor, 'roberto', 'senha123', conexao)
+    nome, logou, cargo = verificaLogin(cursor, 'roberto', 'senha123', conexao, 'OUTRA_MAQUINA')
 
     assert logou is True
     assert buscarTentativa(cursor)[1] == 0
@@ -580,8 +576,106 @@ def testVerificaLoginTentativasContamParaQualquerUsuario(banco):
 
     #o controle é por máquina, então erros com logins diferentes somam
     with pytest.raises(ValueError, match='3 TENTATIVAS RESTANTES'):
-        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao)
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, MAQUINA)
     with pytest.raises(ValueError, match='2 TENTATIVAS RESTANTES'):
-        verificaLogin(cursor, 'maria', 'senhaErrada', conexao)
+        verificaLogin(cursor, 'maria', 'senhaErrada', conexao, MAQUINA)
     with pytest.raises(ValueError, match='1 TENTATIVAS RESTANTES'):
-        verificaLogin(cursor, 'inexistente', 'qualquer', conexao)
+        verificaLogin(cursor, 'inexistente', 'qualquer', conexao, MAQUINA)
+
+# ---------------------------------------------------------------------------
+# Identificador recebido por parâmetro
+# ---------------------------------------------------------------------------
+
+def testVerificaLoginRegistraIdentificadorRecebido(banco):
+    conexao, cursor = banco
+
+    #na API o identificador será o IP de quem fez a requisição
+    with pytest.raises(ValueError, match='3 TENTATIVAS RESTANTES'):
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, '192.168.0.10')
+
+    assert buscarTentativa(cursor, '192.168.0.10') == ('192.168.0.10', 3, None)
+    assert buscarTentativa(cursor) is None
+
+
+def testVerificaLoginIdentificadoresTemContagensSeparadas(banco):
+    conexao, cursor = banco
+
+    with pytest.raises(ValueError, match='3 TENTATIVAS RESTANTES'):
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, '192.168.0.10')
+    with pytest.raises(ValueError, match='2 TENTATIVAS RESTANTES'):
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, '192.168.0.10')
+
+    #outro identificador começa a contagem do início
+    with pytest.raises(ValueError, match='3 TENTATIVAS RESTANTES'):
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, '192.168.0.20')
+
+    assert buscarTentativa(cursor, '192.168.0.10')[1] == 2
+    assert buscarTentativa(cursor, '192.168.0.20')[1] == 3
+
+
+# ---------------------------------------------------------------------------
+# Exceções próprias
+# ---------------------------------------------------------------------------
+
+def testCadastraLoginRepetidoLancaConflito(banco):
+    conexao, cursor = banco
+
+    with pytest.raises(ConflitoError, match='LOGIN JÁ EXISTE NO SISTEMA!'):
+        cadastraLogin(
+            cursor, conexao,
+            'Outro Roberto', 'roberto', 'senha456',
+            'ADMINISTRADOR', 'CONSULTA'
+        )
+
+
+@pytest.mark.parametrize(
+    "senha, cargoUsuarioCriado",
+    [
+        ('123', 'FINANCEIRO'),
+        ('senha456', 'CARGO INVÁLIDO'),
+    ]
+    #senha curta e cargo inexistente continuam sendo 400
+)
+def testCadastraLoginValidacaoContinuaValueError(banco, senha, cargoUsuarioCriado):
+    conexao, cursor = banco
+
+    with pytest.raises(ValueError) as erro:
+        cadastraLogin(
+            cursor, conexao,
+            'Maria', 'maria', senha,
+            'ADMINISTRADOR', cargoUsuarioCriado
+        )
+
+    assert type(erro.value) is ValueError
+
+
+@pytest.mark.parametrize(
+    "login, senha",
+    [
+        ('roberto', 'senhaErrada'),
+        ('inexistente', 'senha123'),
+    ]
+)
+def testVerificaLoginInvalidoLancaCredenciaisInvalidas(banco, login, senha):
+    conexao, cursor = banco
+
+    with pytest.raises(CredenciaisInvalidasError, match='USUÁRIO OU SENHA INVÁLIDOS!'):
+        verificaLogin(cursor, login, senha, conexao, MAQUINA)
+
+
+def testVerificaLoginEsgotaTentativasLancaBloqueio(banco):
+    conexao, cursor = banco
+
+    errarLogin(cursor, conexao, 3)
+
+    with pytest.raises(BloqueioError, match='VOCÊ ESGOTOU SUAS TENTATIVAS'):
+        verificaLogin(cursor, 'roberto', 'senhaErrada', conexao, MAQUINA)
+
+
+def testVerificaLoginBloqueadoLancaBloqueio(banco):
+    conexao, cursor = banco
+
+    errarLogin(cursor, conexao, 4)
+
+    with pytest.raises(BloqueioError, match='VOCÊ ACABOU COM SUAS TENTATIVAS'):
+        verificaLogin(cursor, 'roberto', 'senha123', conexao, MAQUINA)

@@ -2,6 +2,7 @@ import sqlite3
 import pytest
 from servicos.produtos import cadastroProduto, buscarProduto, deletarProduto, consultaProdutos
 from servicos.saldo import verificarSaldo
+from servicos.erros import NaoEncontradoError
 '''
 Checklist de como ralizar os testes:
 1- Declarar uma fixture para criar o banco de dados em memória e as tabelas necessárias.(ambiente)
@@ -302,8 +303,9 @@ def testConsultaProdutos(banco):
 def testConsultaProdutosSemProdutos(banco):
     conexao, cursor = banco
 
-    with pytest.raises(ValueError, match='AINDA NÃO HÁ PRODUTOS CADASTRADOS!'):
-        consultaProdutos(cursor)
+    produtos = consultaProdutos(cursor)
+
+    assert produtos == []
 
 def testDeletarProdutoValido(banco):
     conexao, cursor = banco
@@ -643,8 +645,7 @@ def testDeletarUltimoProdutoConsultaVazia(banco):
 
     deletarProduto("1", cursor, conexao, "ROBERTO", "ADMINISTRADOR")
 
-    with pytest.raises(ValueError, match='AINDA NÃO HÁ PRODUTOS CADASTRADOS!'):
-        consultaProdutos(cursor)
+    assert consultaProdutos(cursor) == []
 
 def testDeletarComErroNaoRegistraMovimentacao(banco):
     conexao, cursor = banco
@@ -699,3 +700,38 @@ def testCadastroInvestZeroComSaldoZerado(banco):
 
     assert verificarSaldo(cursor) == 0
     assert buscarProduto(1, cursor) == ('Coca Cola', 20)
+# ---------------------------------------------------------------------------
+# Exceções próprias
+# ---------------------------------------------------------------------------
+
+def testDeletarIdNaoExisteLancaNaoEncontrado(banco):
+    conexao, cursor = banco
+
+    with pytest.raises(NaoEncontradoError, match='PRODUTO NÃO ENCONTRADO'):
+        deletarProduto("999", cursor, conexao, "ROBERTO", "ADMINISTRADOR")
+
+@pytest.mark.parametrize("idProd", ["ID INVÁLIDO", "-1", "0"])
+def testDeletarIdInvalidoContinuaValueError(banco, idProd):
+    conexao, cursor = banco
+
+    #erro de validação não pode virar 404
+    with pytest.raises(ValueError) as erro:
+        deletarProduto(idProd, cursor, conexao, "ROBERTO", "ADMINISTRADOR")
+
+    assert type(erro.value) is ValueError
+
+@pytest.mark.parametrize(
+    "q, v, invest",
+    [
+        ('INVÁLIDO', '6', '100'),
+        ('20', 'INVÁLIDO', '100'),
+        ('20', '6', '200000'),
+    ]
+)
+def testCadastroErrosContinuamValueError(banco, q, v, invest):
+    conexao, cursor = banco
+
+    with pytest.raises(ValueError) as erro:
+        cadastroProduto("Coca Cola", q, v, invest, cursor, conexao, "ROBERTO", "ADMINISTRADOR")
+
+    assert type(erro.value) is ValueError

@@ -158,8 +158,9 @@ def testOperacaoInvalida(banco):
 def testConsultaHistSaldoVazio(banco):
     conexao, cursor = banco
 
-    with pytest.raises(ValueError, match='AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES!'):
-        consultaHistSaldo(cursor)
+    historico = consultaHistSaldo(cursor)
+
+    assert historico == []
 
 def testEntradaValorNegativo(banco):
     conexao, cursor = banco

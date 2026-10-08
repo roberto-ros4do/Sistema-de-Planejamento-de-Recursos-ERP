@@ -227,7 +227,6 @@ def telaHistMov(cursor, conexao, cargo=None, nome=None): #OK
         print(f'ERRO: {erro}')
 
 def telaEditarSaldo(cursor, conexao, cargo=None, nome=None): #OK
-    saldo = s.verificarSaldo(cursor)
     print('[1] APLICAÇÃO ')
     print('[2] RETIRADA')
     try:
@@ -236,12 +235,12 @@ def telaEditarSaldo(cursor, conexao, cargo=None, nome=None): #OK
             case '1':
                 op = 'ENTRADA'
                 ap = input('Quanto deseja adicionar: R$')
-                s.editarSaldo(op, ap, saldo, cursor, conexao, nome, cargo)
+                s.editarSaldo(op, ap, cursor, conexao, nome, cargo)
                 return
             case '2':
                 op = 'RETIRADA'
                 ret = input('Quanto deseja retirar: R$')
-                s.editarSaldo(op, ret, saldo, cursor, conexao, nome, cargo)
+                s.editarSaldo(op, ret, cursor, conexao, nome, cargo)
                 return
             case _:
                 op = ''

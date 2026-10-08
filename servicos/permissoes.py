@@ -24,7 +24,26 @@ PERMISSOES = {
         'FINANCEIRO',
         'CONSULTA'],
 
-    'EXPORTAR_RELATORIO_CSV': [
+    'EXPORTAR_RELATORIO_PRODUTOS': [
+        'ADMINISTRADOR',
+        'GERENTE',
+        'ESTOQUISTA',
+        'FINANCEIRO',
+        'CONSULTA'],
+
+    'EXPORTAR_RELATORIO_MOVIMENTACOES': [
+        'ADMINISTRADOR',
+        'GERENTE',
+        'ESTOQUISTA',
+        'FINANCEIRO',
+        'CONSULTA'],
+
+    'EXPORTAR_RELATORIO_TRANSACOES': [
+        'ADMINISTRADOR',
+        'FINANCEIRO',
+        'CONSULTA'],
+
+    'EXPORTAR_RELATORIO_ESTOQUE': [
         'ADMINISTRADOR',
         'GERENTE',
         'ESTOQUISTA',

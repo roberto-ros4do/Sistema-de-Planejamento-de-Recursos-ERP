@@ -1,11 +1,10 @@
 from servicos import permissoes as pe
+from servicos import erros as er
 def consultaMov(cursor):
     cursor.execute("""
         SELECT produto, idProduto, tipo, quantidade, data, quemFez, valorEnvolvido FROM  historicoMovimentacao                  
         """) 
     historico = cursor.fetchall()
-    if not historico:
-        raise ValueError('AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES! ')
     return historico
 
 def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
@@ -27,7 +26,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
-                raise ValueError('PRODUTO NÃO ENCONTRADO')
+                raise er.NaoEncontradoError('PRODUTO NÃO ENCONTRADO')
             produto = resultado[0]
             try:
                 q = int(q)
@@ -76,7 +75,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
-                raise ValueError('PRODUTO NÃO ENCONTRADO')
+                raise er.NaoEncontradoError('PRODUTO NÃO ENCONTRADO')
             produto = resultado[0]
             try:
                 q = int(q)
@@ -124,7 +123,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
-                raise ValueError('PRODUTO NÃO ENCONTRADO')
+                raise er.NaoEncontradoError('PRODUTO NÃO ENCONTRADO')
             produto = resultado[0]
             unidades = resultado[1]
             try:
@@ -171,7 +170,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
-                raise ValueError('PRODUTO NÃO ENCONTRADO')
+                raise er.NaoEncontradoError('PRODUTO NÃO ENCONTRADO')
             produto = resultado[0]
             unidades = resultado[1]
             try:
@@ -203,7 +202,7 @@ def registroMov(idProduto, tip, q, cursor, conexao, nome, cargo, invest=0):
                 raise ValueError('CAMPO ID ACEITA APENAS NÚMEROS INTEIROS E POSITIVOS!')
             resultado = p.buscarProduto(idProduto, cursor)
             if resultado is None:
-                raise ValueError('PRODUTO NÃO ENCONTRADO')
+                raise er.NaoEncontradoError('PRODUTO NÃO ENCONTRADO')
             produto = resultado[0]
             unidades = resultado[1]
             try:

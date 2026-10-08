@@ -3,6 +3,7 @@ import pytest
 import pandas as pd
 
 from servicos.relatorios import lerDados, gerarRel, gerarCsv, formatarRelatorio
+from servicos.erros import NaoEncontradoError
 
 
 @pytest.fixture
@@ -81,7 +82,7 @@ def banco():
 def testLerDadosProdutos(banco):
     conexao, cursor = banco
 
-    df = lerDados('1', conexao)
+    df = lerDados('1', conexao, 'ADMINISTRADOR')
 
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
@@ -94,7 +95,7 @@ def testLerDadosProdutos(banco):
 def testLerDadosMovimentacoes(banco):
     conexao, cursor = banco
 
-    df = lerDados('2', conexao)
+    df = lerDados('2', conexao, 'ADMINISTRADOR')
 
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
@@ -106,7 +107,7 @@ def testLerDadosMovimentacoes(banco):
 def testLerDadosSaldo(banco):
     conexao, cursor = banco
 
-    df = lerDados('3', conexao)
+    df = lerDados('3', conexao, 'ADMINISTRADOR')
 
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
@@ -118,7 +119,7 @@ def testLerDadosSaldo(banco):
 def testLerDadosEstoque(banco):
     conexao, cursor = banco
 
-    df = lerDados('4', conexao)
+    df = lerDados('4', conexao, 'ADMINISTRADOR')
 
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 2
@@ -129,7 +130,7 @@ def testLerDadosComQuery(banco):
     conexao, cursor = banco
 
     query = "SELECT id, nome FROM produtos WHERE id = ?"
-    df = lerDados('1', conexao, query, (1,))
+    df = lerDados('1', conexao, 'ADMINISTRADOR', query, (1,))
 
     assert len(df) == 1
     assert df.iloc[0]['id'] == 1
@@ -140,7 +141,7 @@ def testLerDadosRelatorioInvalido(banco):
     conexao, cursor = banco
 
     with pytest.raises(ValueError, match='TIPO DE RELATÓRIO INVÁLIDO'):
-        lerDados('99', conexao)
+        lerDados('99', conexao, 'ADMINISTRADOR')
 
 
 def testLerDadosSemProdutos(banco):
@@ -163,9 +164,9 @@ def testLerDadosSemProdutos(banco):
 
     with pytest.raises(
         ValueError,
-        match='NÃO HÁ PRODUTOS CADASTRADOS COM ESTAS ESPECIFICAÇÕES!'
+        match='NÃO HÁ DADOS PARA GERAR O RELATÓRIO COM ESTAS ESPECIFICAÇÕES!'
     ):
-        lerDados('1', conexao)
+        lerDados('1', conexao, 'ADMINISTRADOR')
 
     conexao.close()
 
@@ -179,7 +180,7 @@ def testGerarRelatorioCSV(tmp_path):
 
     nome_arquivo = str(tmp_path / 'relatorio_produtos')
 
-    gerarRel(df, nome_arquivo, 'ADMINISTRADOR')
+    gerarRel(df, nome_arquivo)
 
     arquivos = list(tmp_path.glob('relatorio_produtos_*.csv'))
 
@@ -190,22 +191,14 @@ def testGerarRelatorioCSV(tmp_path):
     assert '1;Coca Cola;20' in conteudo
 
 
-def testGerarRelatorioSemPermissao(tmp_path):
-    df = pd.DataFrame({
-        'id': [1],
-        'nome': ['Coca Cola']
-    })
-
-    nome_arquivo = str(tmp_path / 'relatorio_produtos')
+def testLerDadosSemPermissao(banco):
+    conexao, cursor = banco
 
     with pytest.raises(
         PermissionError,
         match='USUÁRIO NÃO POSSUI PERMISSÃO PARA REALIZAR ESTA AÇÃO'
     ):
-        gerarRel(df, nome_arquivo, 'CARGO INVÁLIDO')
-
-    arquivos = list(tmp_path.glob('relatorio_produtos_*.csv'))
-    assert len(arquivos) == 0
+        lerDados('1', conexao, 'CARGO INVÁLIDO')
 
 # ---------------------------------------------------------------------------
 # Casos complementares
@@ -224,7 +217,7 @@ def testGerarRelatorioSemPermissao(tmp_path):
 def testLerDadosComQueryTodosRelatorios(banco, rel, query, parametros, coluna, esperado):
     conexao, cursor = banco
 
-    df = lerDados(rel, conexao, query, parametros)
+    df = lerDados(rel, conexao, 'ADMINISTRADOR', query, parametros)
 
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 1
@@ -236,7 +229,7 @@ def testLerDadosQuerySemParametrosUsaPadrao(banco, rel):
     conexao, cursor = banco
 
     #sem parametros a função ignora a query recebida e usa a consulta padrão
-    df = lerDados(rel, conexao, "SELECT 1 AS coluna_que_nao_deve_aparecer")
+    df = lerDados(rel, conexao, 'ADMINISTRADOR', "SELECT 1 AS coluna_que_nao_deve_aparecer")
 
     assert 'coluna_que_nao_deve_aparecer' not in df.columns
     assert len(df) == 2
@@ -256,9 +249,9 @@ def testLerDadosComQuerySemResultado(banco, rel, query, parametros):
 
     with pytest.raises(
         ValueError,
-        match='NÃO HÁ PRODUTOS CADASTRADOS COM ESTAS ESPECIFICAÇÕES!'
+        match='NÃO HÁ DADOS PARA GERAR O RELATÓRIO COM ESTAS ESPECIFICAÇÕES!'
     ):
-        lerDados(rel, conexao, query, parametros)
+        lerDados(rel, conexao, 'ADMINISTRADOR', query, parametros)
 
 
 @pytest.mark.parametrize(
@@ -278,9 +271,9 @@ def testLerDadosTabelaVazia(banco, rel, tabela):
 
     with pytest.raises(
         ValueError,
-        match='NÃO HÁ PRODUTOS CADASTRADOS COM ESTAS ESPECIFICAÇÕES!'
+        match='NÃO HÁ DADOS PARA GERAR O RELATÓRIO COM ESTAS ESPECIFICAÇÕES!'
     ):
-        lerDados(rel, conexao)
+        lerDados(rel, conexao, 'ADMINISTRADOR')
 
 
 @pytest.mark.parametrize("rel", ['', '0', '5', 1, 'RELATORIO'])
@@ -288,34 +281,34 @@ def testLerDadosTiposInvalidos(banco, rel):
     conexao, cursor = banco
 
     with pytest.raises(ValueError, match='TIPO DE RELATÓRIO INVÁLIDO'):
-        lerDados(rel, conexao)
+        lerDados(rel, conexao, 'ADMINISTRADOR')
 
 
 @pytest.mark.parametrize(
-    "cargo",
-    ['ADMINISTRADOR', 'GERENTE', 'ESTOQUISTA', 'FINANCEIRO', 'CONSULTA']
+    "rel, cargo",
+    [
+        ('1', 'ADMINISTRADOR'), ('1', 'GERENTE'), ('1', 'ESTOQUISTA'), ('1', 'FINANCEIRO'), ('1', 'CONSULTA'),
+        ('2', 'ADMINISTRADOR'), ('2', 'GERENTE'), ('2', 'ESTOQUISTA'), ('2', 'FINANCEIRO'), ('2', 'CONSULTA'),
+        ('3', 'ADMINISTRADOR'), ('3', 'FINANCEIRO'), ('3', 'CONSULTA'),
+        ('4', 'ADMINISTRADOR'), ('4', 'GERENTE'), ('4', 'ESTOQUISTA'), ('4', 'FINANCEIRO'), ('4', 'CONSULTA'),
+    ]
+    #cada tipo de relatório usa a sua própria permissão
 )
-def testGerarRelatorioTodosCargosPermitidos(tmp_path, cargo):
-    df = pd.DataFrame({
-        'id': [1],
-        'nome': ['Coca Cola']
-    })
+def testLerDadosCargosPermitidos(banco, rel, cargo):
+    conexao, cursor = banco
 
-    nome_arquivo = str(tmp_path / 'relatorio_produtos')
+    df = lerDados(rel, conexao, cargo)
 
-    gerarRel(df, nome_arquivo, cargo)
-
-    arquivos = list(tmp_path.glob('relatorio_produtos_*.csv'))
-    assert len(arquivos) == 1
+    assert len(df) == 2
 
 
 def testGerarRelatorioAPartirDeLerDados(banco, tmp_path):
     conexao, cursor = banco
 
-    df = lerDados('3', conexao)
+    df = lerDados('3', conexao, 'ADMINISTRADOR')
     nome_arquivo = str(tmp_path / 'relatorio_saldo')
 
-    gerarRel(df, nome_arquivo, 'ADMINISTRADOR')
+    gerarRel(df, nome_arquivo)
 
     arquivos = list(tmp_path.glob('relatorio_saldo_*.csv'))
     assert len(arquivos) == 1
@@ -391,8 +384,8 @@ def testFormatarRelatorioNaoAlteraOriginal():
 def testGerarCsvTodosRelatorios(banco, rel, cabecalho, linha):
     conexao, cursor = banco
 
-    df = lerDados(rel, conexao)
-    conteudo = gerarCsv(df, 'ADMINISTRADOR')
+    df = lerDados(rel, conexao, 'ADMINISTRADOR')
+    conteudo = gerarCsv(df)
     linhas = conteudo.splitlines()
 
     assert linhas[0] == cabecalho
@@ -403,32 +396,51 @@ def testGerarCsvComFiltro(banco):
     conexao, cursor = banco
 
     query = "SELECT valor, operacao FROM histSaldo WHERE operacao = ?"
-    df = lerDados('3', conexao, query, ('SAÍDA',))
+    df = lerDados('3', conexao, 'ADMINISTRADOR', query, ('SAÍDA',))
 
-    conteudo = gerarCsv(df, 'CONSULTA')
+    conteudo = gerarCsv(df)
 
     assert conteudo.splitlines() == ['valor;operacao', '10,00;SAÍDA']
 
 
-def testGerarCsvSemPermissao(banco):
+@pytest.mark.parametrize(
+    "rel, cargo",
+    [
+        ('3', 'GERENTE'),
+        ('3', 'ESTOQUISTA'),
+        ('1', 'CARGO INVÁLIDO'),
+        ('2', 'CARGO INVÁLIDO'),
+        ('3', 'CARGO INVÁLIDO'),
+        ('4', 'CARGO INVÁLIDO'),
+        ('1', ''),
+    ]
+    #GERENTE e ESTOQUISTA não veem o histórico de transações, então não exportam o extrato
+)
+def testLerDadosCargosSemPermissao(banco, rel, cargo):
     conexao, cursor = banco
-
-    df = lerDados('1', conexao)
 
     with pytest.raises(
         PermissionError,
         match='USUÁRIO NÃO POSSUI PERMISSÃO PARA REALIZAR ESTA AÇÃO'
     ):
-        gerarCsv(df, 'CARGO INVÁLIDO')
+        lerDados(rel, conexao, cargo)
+
+
+def testLerDadosTipoInvalidoAntesDaPermissao(banco):
+    conexao, cursor = banco
+
+    #tipo inválido não tem ação associada, então o erro de tipo vem primeiro
+    with pytest.raises(ValueError, match='TIPO DE RELATÓRIO INVÁLIDO'):
+        lerDados('99', conexao, 'CARGO INVÁLIDO')
 
 
 def testGerarRelatorioArquivoComMarcadorUtf8(banco, tmp_path):
     conexao, cursor = banco
 
-    df = lerDados('3', conexao)
+    df = lerDados('3', conexao, 'ADMINISTRADOR')
     nome_arquivo = str(tmp_path / 'relatorio_extrato')
 
-    gerarRel(df, nome_arquivo, 'ADMINISTRADOR')
+    gerarRel(df, nome_arquivo)
 
     arquivo = list(tmp_path.glob('relatorio_extrato_*.csv'))[0]
     bytes_arquivo = arquivo.read_bytes()
@@ -442,7 +454,51 @@ def testLerDadosContinuaEmCentavos(banco):
     conexao, cursor = banco
 
     #a formatação só acontece no CSV; lerDados devolve os dados do banco
-    df = lerDados('2', conexao)
+    df = lerDados('2', conexao, 'ADMINISTRADOR')
 
     assert df.iloc[0]['valorEnvolvido'] == 1000
     assert df.iloc[0]['data'] == '2026/10/01'
+
+# ---------------------------------------------------------------------------
+# Exceções próprias
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("rel", ['', '0', '5', 1, 'RELATORIO'])
+def testLerDadosTipoInvalidoLancaNaoEncontrado(banco, rel):
+    conexao, cursor = banco
+
+    with pytest.raises(NaoEncontradoError, match='TIPO DE RELATÓRIO INVÁLIDO'):
+        lerDados(rel, conexao, 'ADMINISTRADOR')
+
+
+@pytest.mark.parametrize(
+    "rel, tabela",
+    [
+        ('1', 'produtos'),
+        ('2', 'historicoMovimentacao'),
+        ('3', 'histSaldo'),
+        ('4', 'produtos'),
+    ]
+)
+def testLerDadosVazioLancaNaoEncontrado(banco, rel, tabela):
+    conexao, cursor = banco
+
+    cursor.execute(f"DELETE FROM {tabela}")
+    conexao.commit()
+
+    with pytest.raises(
+        NaoEncontradoError,
+        match='NÃO HÁ DADOS PARA GERAR O RELATÓRIO COM ESTAS ESPECIFICAÇÕES!'
+    ):
+        lerDados(rel, conexao, 'ADMINISTRADOR')
+
+
+def testLerDadosSemPermissaoContinuaPermissionError(banco):
+    conexao, cursor = banco
+
+    #falta de permissão continua sendo 403, mesmo com o relatório vazio
+    cursor.execute("DELETE FROM histSaldo")
+    conexao.commit()
+
+    with pytest.raises(PermissionError):
+        lerDados('3', conexao, 'GERENTE')

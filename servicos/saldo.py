@@ -8,7 +8,8 @@ def verificarSaldo(cursor):
     saldo = cursor.fetchone()[0]
     return saldo
 
-def editarSaldo(op, qtd, saldo, cursor, conexao, nome, cargo):
+def editarSaldo(op, qtd, cursor, conexao, nome, cargo):
+    saldo = verificarSaldo(cursor)
     if not pe.podeExecutar(cargo, 'EDITAR_SALDO'):
         raise PermissionError('USUÁRIO NÃO POSSUI PERMISSÃO PARA REALIZAR ESTA AÇÃO')
     import datetime as dt
@@ -64,6 +65,4 @@ def consultaHistSaldo(cursor):
     SELECT valor, operacao, quemFez, data, hora FROM histSaldo
     """) 
     historico = cursor.fetchall()
-    if not historico:
-        raise ValueError('AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES! ')
     return historico

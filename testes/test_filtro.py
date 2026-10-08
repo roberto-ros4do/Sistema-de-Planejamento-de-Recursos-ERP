@@ -191,11 +191,9 @@ def testFiltragemProdutosValorInvalido(banco):
 def testFiltragemProdutosSemResultado(banco):
     conexao, cursor = banco
 
-    with pytest.raises(
-        ValueError,
-        match='NÃO HÁ PRODUTOS COM ESTAS ESPECIFICAÇÕES!'
-    ):
-        filtragemProdutos('', '', '', '', cursor, n='ProdutoInexistente')
+    produtos = filtragemProdutos('', '', '', '', cursor, n='ProdutoInexistente')
+
+    assert produtos == []
 
 
 def testFiltragemProdutosEstoqueRelatorio(banco):
@@ -948,11 +946,12 @@ def testFiltragemSaldoSemHistorico(banco):
     cursor.execute("DELETE FROM histSaldo")
     conexao.commit()
 
-    with pytest.raises(ValueError, match='AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES!'):
-        filtragemSaldo(
-            '', '', '', '',
-            '', '', cursor
-        )
+    historico = filtragemSaldo(
+        '', '', '', '',
+        '', '', cursor
+    )
+
+    assert historico == []
 
 
 def testFiltragemSaldoSemHistoricoRelatorio(banco):
@@ -961,11 +960,13 @@ def testFiltragemSaldoSemHistoricoRelatorio(banco):
     cursor.execute("DELETE FROM histSaldo")
     conexao.commit()
 
-    with pytest.raises(ValueError, match='AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES!'):
-        filtragemSaldo(
-            '', '', '', '',
-            '', '', cursor, f='REL'
-        )
+    query, parametros = filtragemSaldo(
+        '', '', '', '',
+        '', '', cursor, f='REL'
+    )
+
+    assert 'WHERE 1=1' in query
+    assert parametros == []
 
 
 def testFiltragemSaldoSemFiltrosRetornaTudo(banco):
@@ -1215,4 +1216,62 @@ def testFiltragemMovTipoParecidoInvalido(banco, tipo):
         filtragemMov(
             '', '', '', '', '', '', '',
             '', '', cursor, tipo
+        )
+
+# ---------------------------------------------------------------------------
+# Listas vazias em vez de erro
+# ---------------------------------------------------------------------------
+
+def testFiltragemProdutosTabelaVazia(banco):
+    conexao, cursor = banco
+
+    cursor.execute("DELETE FROM produtos")
+    conexao.commit()
+
+    produtos = filtragemProdutos('', '', '', '', cursor)
+
+    assert produtos == []
+
+
+def testFiltragemProdutosSemResultadoComEstoque(banco):
+    conexao, cursor = banco
+
+    produtos = filtragemProdutos('', '', '100', '', cursor, estoq=True)
+
+    assert produtos == []
+
+
+def testFiltragemSaldoSemHistoricoComFiltros(banco):
+    conexao, cursor = banco
+
+    cursor.execute("DELETE FROM histSaldo")
+    conexao.commit()
+
+    historico = filtragemSaldo(
+        'ROBERTO', 'SAÍDA', '5', '15',
+        '2026/10/01', '2026/10/03', cursor
+    )
+
+    assert historico == []
+
+
+@pytest.mark.parametrize(
+    "tip, valorMin, dataInicial, dataUltima, mensagem",
+    [
+        ('', '', '01/10/2026', '02/10/2026', 'AS DATAS NÃO ESTÃO NO FORMATO ESPERADO!'),
+        ('INVALIDA', '', '', '', 'CAMPO OPERAÇÃO ACEITA APENAS OPERAÇÕES VÁLIDAS!'),
+        ('', '0', '', '', 'CAMPO VALOR ACEITA APENAS NÚMEROS REAIS E POSITIVOS'),
+    ]
+    #com o histórico vazio, os erros de validação continuam sendo lançados
+)
+def testFiltragemSaldoSemHistoricoContinuaValidando(banco, tip, valorMin, dataInicial, dataUltima, mensagem):
+    conexao, cursor = banco
+
+    cursor.execute("DELETE FROM histSaldo")
+    conexao.commit()
+
+    with pytest.raises(ValueError, match=mensagem):
+        filtragemSaldo(
+            '', tip, valorMin, '',
+            dataInicial, dataUltima, cursor
         )

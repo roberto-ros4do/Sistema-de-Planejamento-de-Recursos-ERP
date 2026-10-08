@@ -2,6 +2,7 @@ import sqlite3
 import pytest
 
 from servicos.movimentacoes import consultaMov, registroMov
+from servicos.erros import NaoEncontradoError
 
 
 @pytest.fixture
@@ -74,8 +75,9 @@ def banco():
 def testConsultaMovSemMovimentacoes(banco):
     conexao, cursor = banco
 
-    with pytest.raises(ValueError, match='AINDA NÃO FORAM REGISTRADAS MOVIMENTAÇÕES!'):
-        consultaMov(cursor)
+    historico = consultaMov(cursor)
+
+    assert historico == []
 
 
 def testRegistroCompra(banco):
@@ -695,3 +697,43 @@ def testRegistroCargosSemPermissao(banco, cargo):
     cursor.execute("SELECT quantidade FROM produtos WHERE id = 1")
     produto = cursor.fetchone()
     assert produto[0] == 20
+
+# ---------------------------------------------------------------------------
+# Exceções próprias
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("tipo", TIPOS)
+def testRegistroProdutoNaoEncontradoLancaNaoEncontrado(banco, tipo):
+    conexao, cursor = banco
+
+    with pytest.raises(NaoEncontradoError, match='PRODUTO NÃO ENCONTRADO'):
+        registroMov(
+            999, tipo, 5,
+            cursor, conexao, 'ROBERTO', 'ADMINISTRADOR',
+            10
+        )
+
+
+@pytest.mark.parametrize(
+    "idProduto, tipo, quantidade, valor",
+    [
+        ('ID INVÁLIDO', 'COMPRA', 5, 10),
+        (1, 'COMPRA', 'INVÁLIDO', 10),
+        (1, 'COMPRA', 5, 'INVÁLIDO'),
+        (1, 'COMPRA', 5, 2000),
+        (1, 'VENDA', 999, 10),
+        (1, 'OPERACAO_INVALIDA', 5, 10),
+    ]
+    #validação, saldo e estoque insuficientes continuam sendo 400
+)
+def testRegistroErrosContinuamValueError(banco, idProduto, tipo, quantidade, valor):
+    conexao, cursor = banco
+
+    with pytest.raises(ValueError) as erro:
+        registroMov(
+            idProduto, tipo, quantidade,
+            cursor, conexao, 'ROBERTO', 'ADMINISTRADOR',
+            valor
+        )
+
+    assert type(erro.value) is ValueError

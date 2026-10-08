@@ -93,8 +93,6 @@ def filtragemProdutos(valorMin, valorMax, estoqMin, estoqMax, cursor, dataInicia
         return query, parametros
     cursor.execute(query, parametros)
     produtos = cursor.fetchall()
-    if not produtos:
-        raise ValueError('NÃO HÁ PRODUTOS COM ESTAS ESPECIFICAÇÕES!')
     return produtos
 
 def filtragemMov(n, quemCad, idProd, unidMin, unidMax, valorMin, valorMax, dataInicial, dataUltima, cursor, mov): #OK
@@ -272,10 +270,8 @@ def filtragemMovRel(quemCad, unidMin, unidMax, valorMin, valorMax, dataInicial, 
     return query, parametros
 
 def filtragemSaldo(quemCad, tip, valorMin, valorMax, dataInicial, dataUltima, cursor, f=0): #OK
-    from servicos import saldo as s
     import datetime as dt
     parametros = []
-    s.consultaHistSaldo(cursor)
     if dataUltima!='' and dataInicial!='':
         try:
             verificData = dt.datetime.strptime(dataInicial, "%Y/%m/%d")
